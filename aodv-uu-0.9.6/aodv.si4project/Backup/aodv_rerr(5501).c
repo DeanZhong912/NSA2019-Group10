@@ -34,7 +34,7 @@
 #include "params.h"
 
 #endif
-// 创建一个rerr数据报
+
 RERR *NS_CLASS rerr_create(u_int8_t flags, struct in_addr dest_addr,
 			   u_int32_t dest_seqno)
 {

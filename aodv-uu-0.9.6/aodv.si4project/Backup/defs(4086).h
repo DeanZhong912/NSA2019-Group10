@@ -85,7 +85,7 @@
 #endif
 
 /* Data for a network device */
-struct dev_info {       //设备信息
+struct dev_info {
     int enabled;		/* 1 if struct is used, else 0 */
     int sock;			/* AODV socket associated with this device */
 #ifdef CONFIG_GATEWAY
@@ -165,7 +165,7 @@ static inline int name2index(char *name)
 
 /* Two macros to simplify retriving of a dev_info struct. Either using
    an ifindex or a device number (index into devs array). */
-#define DEV_IFINDEX(ifindex) (this_host.devs[ifindex2devindex(ifindex)]) //以简化检索一个dev信息结构。使用ifindex或设备号(索引到devs数组)。
+#define DEV_IFINDEX(ifindex) (this_host.devs[ifindex2devindex(ifindex)])
 #define DEV_NR(n) (this_host.devs[n])
 
  /* Broadcast address according to draft (255.255.255.255) */

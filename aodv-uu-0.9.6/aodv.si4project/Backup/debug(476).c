@@ -137,7 +137,7 @@ char *packet_type(u_int type)
 }
 
 void NS_CLASS alog(int type, int errnum, const char *function, char *format,
-		   ...)// 检查数据帧的格式
+		   ...)
 {
     va_list ap;
     static char buffer[256] = "";
@@ -443,7 +443,7 @@ void NS_CLASS print_rt_table(void *arg)
 }
 
 /* This function lets you print more than one IP address at the same time */
-char *NS_CLASS ip_to_str(struct in_addr addr)//ip从int转成字符串型
+char *NS_CLASS ip_to_str(struct in_addr addr)
 {
     static char buf[16 * 4];
     static int index = 0;
