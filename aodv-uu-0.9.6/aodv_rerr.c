@@ -34,7 +34,7 @@
 #include "params.h"
 
 #endif
-// 创建一个rerr数据报
+// 创建一个rerr数据，参数为目的地址，序列号，以及标记位
 RERR *NS_CLASS rerr_create(u_int8_t flags, struct in_addr dest_addr,
 			   u_int32_t dest_seqno)
 {
@@ -54,7 +54,7 @@ RERR *NS_CLASS rerr_create(u_int8_t flags, struct in_addr dest_addr,
 
     return rerr;
 }
-
+// 给rerr添加到不可到达目的的队列，参数为当前rerr以及要添加的不可到达目的节点的信息
 void NS_CLASS rerr_add_udest(RERR * rerr, struct in_addr udest,
 			     u_int32_t udest_seqno)
 {
@@ -66,7 +66,7 @@ void NS_CLASS rerr_add_udest(RERR * rerr, struct in_addr udest,
     rerr->dest_count++;
 }
 
-
+// 传输rerr消息的函数，参数为rerr，rerr长度，源ip，目的ip
 void NS_CLASS rerr_process(RERR * rerr, int rerrlen, struct in_addr ip_src,
 			   struct in_addr ip_dst)
 {
@@ -93,6 +93,7 @@ void NS_CLASS rerr_process(RERR * rerr, int rerrlen, struct in_addr ip_src,
     }
 
     /* Check which destinations that are unreachable.  */
+	//检查地址是否不可达
     udest = RERR_UDEST_FIRST(rerr);
 
     while (rerr->dest_count) {
