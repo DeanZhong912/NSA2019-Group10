@@ -94,7 +94,7 @@ struct option longopts[] = {
     {0}
 };
 
-void usage(int status)
+void usage(int status)  //返回帮助
 {
     if (status != 0) {
 	fprintf(stderr, "Try `%s --help' for more information.\n", progname);
@@ -200,7 +200,7 @@ int set_kernel_options()
     return 0;
 }
 
-int find_default_gw(void)
+int find_default_gw(void) //读route文件的数据到buff里
 {
     FILE *route;
     char buf[100], *l;
@@ -233,14 +233,14 @@ int find_default_gw(void)
 /*
  * Returns information on a network interface given its name...
  */
-struct sockaddr_in *get_if_info(char *ifname, int type)
+struct sockaddr_in *get_if_info(char *ifname, int type) //获取数据帧的信息
 {
     int skfd;
     struct sockaddr_in *ina;
     static struct ifreq ifr;
 
     /* Get address of interface... */
-    skfd = socket(AF_INET, SOCK_DGRAM, 0);
+    skfd = socket(AF_INET, SOCK_DGRAM, 0); //获得端口的地址
 
     strcpy(ifr.ifr_name, ifname);
     if (ioctl(skfd, type, &ifr) < 0) {

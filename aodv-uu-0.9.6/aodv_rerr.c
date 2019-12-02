@@ -110,6 +110,7 @@ void NS_CLASS rerr_process(RERR * rerr, int rerrlen, struct in_addr ip_src,
 	    /* Checking sequence numbers here is an out of draft
 	     * addition to AODV-UU. It is here because it makes a lot
 	     * of sense... */
+	     // 检查序列号
 	    if (0 && (int32_t) rt->dest_seqno > (int32_t) rerr_dest_seqno) {
 		DEBUG(LOG_DEBUG, 0, "Udest ignored because of seqno");
 		udest = RERR_UDEST_NEXT(udest);

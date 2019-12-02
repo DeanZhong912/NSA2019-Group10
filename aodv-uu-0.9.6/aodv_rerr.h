@@ -29,6 +29,7 @@
 #include "defs.h"
 #include "routing_table.h"
 //每当链接中断导致一个或多个目的地无法从节点的某些邻居处访问时，就会发送RERR消息。
+//路由错误
 /* RERR Flags: */
 #define RERR_NODELETE 0x1
 

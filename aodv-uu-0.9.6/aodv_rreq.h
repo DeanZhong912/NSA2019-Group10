@@ -31,6 +31,7 @@
 #include "routing_table.h"
 
 /* RREQ Flags: */
+// 路由请求
 #define RREQ_JOIN          0x1
 #define RREQ_REPAIR        0x2
 #define RREQ_GRATUITOUS    0x4
@@ -63,19 +64,19 @@ typedef struct {
 #elif defined(__BIG_ENDIAN)
     u_int8_t j:1;		/* Join flag (multicast) */
     u_int8_t r:1;		/* Repair flag */
-    u_int8_t g:1;		/* Gratuitous RREP flag */
-    u_int8_t d:1;		/* Destination only respond */
+    u_int8_t g:1;		/* Gratuitous RREP flag 指示不需要的RREP是否应单播到目标IP地址字段中指定的节点 */
+    u_int8_t d:1;		/* Destination only respond 仅目的地可以响应此RREQ*/
     u_int8_t res1:4;
 #else
 #error "Adjust your <bits/endian.h> defines"
 #endif
     u_int8_t res2;
-    u_int8_t hcnt;
-    u_int32_t rreq_id;
-    u_int32_t dest_addr;
-    u_int32_t dest_seqno;
-    u_int32_t orig_addr;
-    u_int32_t orig_seqno;
+    u_int8_t hcnt;      //从发送方到目的地的跳数
+    u_int32_t rreq_id;  //唯一标识 rreq消息
+    u_int32_t dest_addr;//目的地地址
+    u_int32_t dest_seqno;//与路由关联的目的地序列号
+    u_int32_t orig_addr;//发送端地址
+    u_int32_t orig_seqno;//与路由关联的发送方的序列号
 } RREQ;
 
 #define RREQ_SIZE sizeof(RREQ)
