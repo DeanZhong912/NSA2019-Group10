@@ -22,15 +22,15 @@
 #ifndef _KAODV_QUEUE_H
 #define _KAODV_QUEUE_H
 
-#define KAODV_QUEUE_DROP 1//设置丢弃为1，发送为2
+#define KAODV_QUEUE_DROP 1
 #define KAODV_QUEUE_SEND 2
 
-int kaodv_queue_find(__u32 daddr);//查找
+int kaodv_queue_find(__u32 daddr);
 int kaodv_queue_enqueue_packet(struct sk_buff *skb,
-			       int (*okfn) (struct sk_buff *));//把packet入队
-int kaodv_queue_set_verdict(int verdict, __u32 daddr);//设置命令
-void kaodv_queue_flush(void);//清空队列
-int kaodv_queue_init(void);//队列初始化
-void kaodv_queue_fini(void);//队列清除
+			       int (*okfn) (struct sk_buff *));
+int kaodv_queue_set_verdict(int verdict, __u32 daddr);
+void kaodv_queue_flush(void);
+int kaodv_queue_init(void);
+void kaodv_queue_fini(void);
 
 #endif
