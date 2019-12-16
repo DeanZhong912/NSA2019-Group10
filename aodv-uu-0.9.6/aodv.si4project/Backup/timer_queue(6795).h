@@ -34,7 +34,7 @@ typedef void (AODVUU::*timeout_func_t) (void *);
 typedef void (*timeout_func_t) (void *);
 #endif
 
-struct timer {//定义timer结构体，参数有列表，标识位used，timeval结构体实例化的timeout，timeout_func_t指针类型的handler,和空类型的指针data
+struct timer {
     list_t l;
     int used;
     struct timeval timeout;
