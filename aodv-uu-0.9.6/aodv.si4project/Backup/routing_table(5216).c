@@ -621,7 +621,7 @@ void NS_CLASS precursor_remove(rt_table_t * rt, struct in_addr addr)
 
 /* Delete all entries from the active neighbor list. */
 
-void precursor_list_destroy(rt_table_t * rt)//jajjajaj
+void precursor_list_destroy(rt_table_t * rt)
 {
 	list_t *pos, *tmp;
 
