@@ -44,6 +44,50 @@
 #include "params.h"
 #include "aodv_socket.h"
 #include "aodv_rerr.h"
+//补充的 一些必要的结构 sockaddr_nl nlmsghdr
+struct sockaddr_nl
+{
+sa_family_t    nl_family;
+unsigned short nl_pad;
+__u32          nl_pid;   //进程pid
+__u32          nl_groups;//多播组掩码
+};
+struct nlmsghdr
+{
+__u32 nlmsg_len;   // Length of message 
+__u16 nlmsg_type;  // Message type
+__u16 nlmsg_flags; // Additional flags 
+__u32 nlmsg_seq;   // Sequence number 
+__u32 nlmsg_pid;   // Sending process PID 
+};
+
+struct in_addr
+{
+    union
+    {
+        struct
+        {
+            u_char s_b1,s_b2,s_b3,s_b4;
+        } S_un_b; //An IPv4 address formatted as four u_chars.
+        struct
+        {
+            u_short s_w1,s_w2;
+        } S_un_w; //An IPv4 address formatted as two u_shorts
+       u_long S_addr;//An IPv4 address formatted as a u_long
+    } S_un;
+//#define s_addr S_un.S_addr
+};
+struct msghdr {
+    void         *msg_name;
+    socklen_t    msg_namelen;
+    struct iovec *msg_iov;
+    size_t       msg_iovlen;
+    void         *msg_control;
+    size_t       msg_controllen;
+    int          msg_flags;
+};
+
+
 
 /* Implements a Netlink socket communication channel to the kernel. Route
  * information and refresh messages are passed. */
@@ -51,36 +95,36 @@
 struct nlsock {
 	int sock;
 	int seq;
-	struct sockaddr_nl local;
+	struct sockaddr_nl local;//sockaddr_nl结构 AF_NETLINK nl_pad 进程pid 多播组掩码
 };
 
 struct sockaddr_nl peer = { AF_NETLINK, 0, 0, 0 };
 
-struct nlsock aodvnl;
-struct nlsock rtnl;
+struct nlsock aodvnl;//aodvnl 协议套接字
+struct nlsock rtnl;// rtnl 路由表套接字
 
 static void nl_kaodv_callback(int sock);
 static void nl_rt_callback(int sock);
 
 extern int llfeedback, active_route_timeout, qual_threshold, internet_gw_mode,
     wait_on_reboot;
-extern struct timer worb_timer;
+extern struct timer worb_timer;//获取main函数中的全局变量，这些变量都在main函数中已经赋值
 
 #define BUFLEN 256
 
 /* #define DEBUG_NETLINK */
 
-void nl_init(void)
+void nl_init(void)//对用户层nl模块进行初始化
 {
 	int status;
 	unsigned int addrlen;
 
-	memset(&peer, 0, sizeof(struct sockaddr_nl));
+	memset(&peer, 0, sizeof(struct sockaddr_nl));//为peer申请空间
 	peer.nl_family = AF_NETLINK;
 	peer.nl_pid = 0;
 	peer.nl_groups = 0;
 
-	memset(&aodvnl, 0, sizeof(struct nlsock));
+	memset(&aodvnl, 0, sizeof(struct nlsock));//为aodvnl申请空间并赋值
 	aodvnl.seq = 0;
 	aodvnl.local.nl_family = AF_NETLINK;
 	aodvnl.local.nl_groups = AODVGRP_NOTIFY;
@@ -88,37 +132,37 @@ void nl_init(void)
 
 	/* This is the AODV specific socket to communicate with the
 	   AODV kernel module */
-	aodvnl.sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_AODV);
+	aodvnl.sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_AODV);//adodvnl是与内核aodv通信的套接字
 
-	if (aodvnl.sock < 0) {
+	if (aodvnl.sock < 0) {//获取失败
 		perror("Unable to create AODV netlink socket");
 		exit(-1);
 	}
 
 
 	status = bind(aodvnl.sock, (struct sockaddr *) &aodvnl.local,
-		      sizeof(aodvnl.local));
+		      sizeof(aodvnl.local));//绑定套接字
 
-	if (status == -1) {
+	if (status == -1) {//bind失败
 		perror("Bind for AODV netlink socket failed");
 		exit(-1);
 	}
 
 	addrlen = sizeof(aodvnl.local);
 
-	if (getsockname
+	if (getsockname//获取aodv套接字名字
 	    (aodvnl.sock, (struct sockaddr *) &aodvnl.local, &addrlen) < 0) {
 		perror("Getsockname failed ");
 		exit(-1);
 	}
 
-	if (attach_callback_func(aodvnl.sock, nl_kaodv_callback) < 0) {
+	if (attach_callback_func(aodvnl.sock, nl_kaodv_callback) < 0) {//检查回调函数连接，连接成功返回0否则为-1
 		alog(LOG_ERR, 0, __FUNCTION__, "Could not attach callback.");
 	}
 	/* This socket is the generic routing socket for adding and
 	   removing kernel routing table entries */
-
-	memset(&rtnl, 0, sizeof(struct nlsock));
+// rtnl 套接字是用于添加和删除内核路由表项的通用路由套接字
+	memset(&rtnl, 0, sizeof(struct nlsock));//申请空间并赋值
 	rtnl.seq = 0;
 	rtnl.local.nl_family = AF_NETLINK;
 	rtnl.local.nl_groups =
@@ -154,7 +198,7 @@ void nl_init(void)
 
 void nl_cleanup(void)
 {
-	close(aodvnl.sock);
+	close(aodvnl.sock);//关闭aodvnl以及rtnl的套接字
 	close(rtnl.sock);
 }
 
@@ -182,7 +226,7 @@ static void nl_kaodv_callback(int sock)
 	nlm = (struct nlmsghdr *) buf;
 
 	switch (nlm->nlmsg_type) {
-	case NLMSG_ERROR:
+	case NLMSG_ERROR://类型为错误
 		nlmerr = NLMSG_DATA(nlm);
 		if (nlmerr->error == 0) {
 		/* 	DEBUG(LOG_DEBUG, 0, "NLMSG_ACK"); */
@@ -193,10 +237,10 @@ static void nl_kaodv_callback(int sock)
 		}
 		break;
 
-	case KAODVM_DEBUG:
+	case KAODVM_DEBUG://类型为内核aodv-debug信息
 		DEBUG(LOG_DEBUG, 0, "kaodv: %s", NLMSG_DATA(nlm));
 		break;
-       	case KAODVM_TIMEOUT:
+       	case KAODVM_TIMEOUT://内核aodv超时信息
 		m = NLMSG_DATA(nlm);
 		dest_addr.s_addr = m->dst;
 
@@ -204,24 +248,24 @@ static void nl_kaodv_callback(int sock)
 		      "Got TIMEOUT msg from kernel for %s",
 		      ip_to_str(dest_addr));
 
-		rt = rt_table_find(dest_addr);
+		rt = rt_table_find(dest_addr);//按目的地址查找路由表
 
 		if (rt && rt->state == VALID)
-			route_expire_timeout(rt);
+			route_expire_timeout(rt);//设置路由到期
 		else
 			DEBUG(LOG_DEBUG, 0,
 			      "Got rt timeoute event but there is no route");
 		break;
-	case KAODVM_ROUTE_REQ:
+	case KAODVM_ROUTE_REQ://类型为内核aodv路由的rreq
 		m = NLMSG_DATA(nlm);
 		dest_addr.s_addr = m->dst;
 
 		DEBUG(LOG_DEBUG, 0, "Got ROUTE_REQ: %s from kernel",
 		      ip_to_str(dest_addr));
 
-		rreq_route_discovery(dest_addr, 0, NULL);
+		rreq_route_discovery(dest_addr, 0, NULL);//执行路由发现操作
 		break;
-	case KAODVM_REPAIR:
+	case KAODVM_REPAIR://类型为路由修复
 		m = NLMSG_DATA(nlm);
 		dest_addr.s_addr = m->dst;
 		src_addr.s_addr = m->src;
@@ -229,13 +273,13 @@ static void nl_kaodv_callback(int sock)
 		DEBUG(LOG_DEBUG, 0, "Got REPAIR from kernel for %s",
 		      ip_to_str(dest_addr));
 
-		fwd_rt = rt_table_find(dest_addr);
+		fwd_rt = rt_table_find(dest_addr);//按目的地址在路由表中查找要修复的表项
 
-		if (fwd_rt)
-			rreq_local_repair(fwd_rt, src_addr, NULL);
+		if (fwd_rt)//找到了
+			rreq_local_repair(fwd_rt, src_addr, NULL);//发送rreq路由请求用于路由修复
 
 		break;
-	case KAODVM_ROUTE_UPDATE:
+	case KAODVM_ROUTE_UPDATE://类型为路由更新
 		m = NLMSG_DATA(nlm);
 
 		
@@ -246,15 +290,15 @@ static void nl_kaodv_callback(int sock)
 		if (dest_addr.s_addr == AODV_BROADCAST ||
 		    dest_addr.s_addr ==
 		    DEV_IFINDEX(m->ifindex).broadcast.s_addr)
-			return;
+			return;//如果是自己发送出去的广播数据包，不做处理
 
-		fwd_rt = rt_table_find(dest_addr);
-		rev_rt = rt_table_find(src_addr);
+		fwd_rt = rt_table_find(dest_addr);//在路由表中查找目的地址
+		rev_rt = rt_table_find(src_addr);//在路由表中查找源地址
 
-		rt_table_update_route_timeouts(fwd_rt, rev_rt);
+		rt_table_update_route_timeouts(fwd_rt, rev_rt);//进行路由更新操作
 
 		break;
-	case KAODVM_SEND_RERR:
+	case KAODVM_SEND_RERR://类型为发送的路由错误信息
 		m = NLMSG_DATA(nlm);
 		dest_addr.s_addr = m->dst;
 		src_addr.s_addr = m->src;
@@ -262,10 +306,10 @@ static void nl_kaodv_callback(int sock)
 		if (dest_addr.s_addr == AODV_BROADCAST ||
 		    dest_addr.s_addr ==
 		    DEV_IFINDEX(m->ifindex).broadcast.s_addr)
-			return;
+			return;//是自己发送出去的广播数据包
 
-		fwd_rt = rt_table_find(dest_addr);
-		rev_rt = rt_table_find(src_addr);
+		fwd_rt = rt_table_find(dest_addr);//查找RERR中目的地址是否存在自己的路由表中
+		rev_rt = rt_table_find(src_addr);//查找源地址是否在自己路由表中
 
 		do {
 			struct in_addr rerr_dest;
@@ -275,25 +319,25 @@ static void nl_kaodv_callback(int sock)
 			      "Sending RERR for unsolicited message from %s to dest %s",
 			      ip_to_str(src_addr), ip_to_str(dest_addr));
 
-			if (fwd_rt) {
+			if (fwd_rt) {//在路由表中找到不可达的目的地址
 				rerr = rerr_create(0, fwd_rt->dest_addr,
-						   fwd_rt->dest_seqno);
+						   fwd_rt->dest_seqno);//找到了，创建rerr
 
-				rt_table_update_timeout(fwd_rt, DELETE_PERIOD);
+				rt_table_update_timeout(fwd_rt, DELETE_PERIOD);//把路由表中该项设置超时
 			} else
-				rerr = rerr_create(0, dest_addr, 0);
+				rerr = rerr_create(0, dest_addr, 0);//没找到创建rerr消息
 
 			/* Unicast the RERR to the source of the data transmission
 			 * if possible, otherwise we broadcast it. */
 
-			if (rev_rt && rev_rt->state == VALID)
+			if (rev_rt && rev_rt->state == VALID)//下一跳有效的表项实现单播
 				rerr_dest = rev_rt->next_hop;
 			else
-				rerr_dest.s_addr = AODV_BROADCAST;
+				rerr_dest.s_addr = AODV_BROADCAST;//否则广播
 
 			aodv_socket_send((AODV_msg *) rerr, rerr_dest,
 					 RERR_CALC_SIZE(rerr), 1,
-					 &DEV_IFINDEX(m->ifindex));
+					 &DEV_IFINDEX(m->ifindex));//发送创建的rerr
 
 			if (wait_on_reboot) {
 				DEBUG(LOG_DEBUG, 0,
@@ -307,7 +351,7 @@ static void nl_kaodv_callback(int sock)
 	}
 
 }
-static void nl_rt_callback(int sock)
+static void nl_rt_callback(int sock)//用于初始化中测试路由回调函数是否正常
 {
 	int len, attrlen;
 	socklen_t addrlen;
@@ -369,7 +413,7 @@ static void nl_rt_callback(int sock)
 	return;
 }
 
-int prefix_length(int family, void *nm)
+int prefix_length(int family, void *nm)//计算路由表项中前驱的长度
 {
 	int prefix = 0;
 
@@ -427,7 +471,7 @@ int nl_send(struct nlsock *nl, struct nlmsghdr *n)
 	n->nlmsg_flags |= NLM_F_ACK;
 
 	/* Send message to netlink interface. */
-	res = sendmsg(nl->sock, &msg, 0);
+	res = sendmsg(nl->sock, &msg, 0);//把msg发送到netlink接口
 
 	if (res < 0) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
@@ -438,6 +482,7 @@ int nl_send(struct nlsock *nl, struct nlmsghdr *n)
 
 /* Function to add, remove and update entries in the kernel routing
  * table */
+ //用于在内核路由表中添加 删除 更新表项
 int nl_kern_route(int action, int flags, int family,
 		  int index, struct in_addr *dst, struct in_addr *gw,
 		  struct in_addr *nm, int metric)
@@ -481,9 +526,9 @@ int nl_kern_route(int action, int flags, int family,
 	if (index > 0)
 		addattr(&req.nlh, RTA_OIF, &index, sizeof(index));
 
-	addattr(&req.nlh, RTA_PRIORITY, &metric, sizeof(metric));
+	addattr(&req.nlh, RTA_PRIORITY, &metric, sizeof(metric));//实际上也是定义结构，申请空间，并赋值，并没有具体操作，具体操作在内核层实现，这里调用rtnl套接字交给了内核处理
 
-	return nl_send(&rtnl, &req.nlh);
+	return nl_send(&rtnl, &req.nlh);//调用rtnl套接字修改内核中的路由表
 }
 
 int nl_send_add_route_msg(struct in_addr dest, struct in_addr next_hop,
@@ -501,7 +546,7 @@ int nl_send_add_route_msg(struct in_addr dest, struct in_addr next_hop,
 	memset(&areq, 0, sizeof(areq));
 
 	areq.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct kaodv_rt_msg));
-	areq.n.nlmsg_type = KAODVM_ADDROUTE;
+	areq.n.nlmsg_type = KAODVM_ADDROUTE;//类型为添加路由条目
 	areq.n.nlmsg_flags = NLM_F_REQUEST;
 
 	areq.m.dst = dest.s_addr;
@@ -524,7 +569,7 @@ int nl_send_add_route_msg(struct in_addr dest, struct in_addr next_hop,
 	DEBUG(LOG_DEBUG, 0, "Sending add route");
 #endif
 	return nl_kern_route(RTM_NEWROUTE, NLM_F_CREATE,
-			     AF_INET, ifindex, &dest, &next_hop, NULL, metric);
+			     AF_INET, ifindex, &dest, &next_hop, NULL, metric);//调用nl_kern_route在内核中创建新表项
 }
 
 int nl_send_no_route_found_msg(struct in_addr dest)
@@ -537,7 +582,7 @@ int nl_send_no_route_found_msg(struct in_addr dest)
 	memset(&areq, 0, sizeof(areq));
 
 	areq.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct kaodv_rt_msg));
-	areq.n.nlmsg_type = KAODVM_NOROUTE_FOUND;
+	areq.n.nlmsg_type = KAODVM_NOROUTE_FOUND;//类型为无路径发现
 	areq.n.nlmsg_flags = NLM_F_REQUEST;
 
 	areq.m.dst = dest.s_addr;
@@ -553,7 +598,7 @@ int nl_send_del_route_msg(struct in_addr dest, struct in_addr next_hop, int metr
 	int index = -1;
 	struct {
 		struct nlmsghdr n;
-		struct kaodv_rt_msg m;
+		struct kaodv_rt_msg m;//内核路由信息
 	} areq;
 
 	DEBUG(LOG_DEBUG, 0, "Send DEL_ROUTE to kernel: %s", ip_to_str(dest));
@@ -561,7 +606,7 @@ int nl_send_del_route_msg(struct in_addr dest, struct in_addr next_hop, int metr
 	memset(&areq, 0, sizeof(areq));
 
 	areq.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct kaodv_rt_msg));
-	areq.n.nlmsg_type = KAODVM_DELROUTE;
+	areq.n.nlmsg_type = KAODVM_DELROUTE;//类型为删除路由表项
 	areq.n.nlmsg_flags = NLM_F_REQUEST;
 
 	areq.m.dst = dest.s_addr;
@@ -569,7 +614,7 @@ int nl_send_del_route_msg(struct in_addr dest, struct in_addr next_hop, int metr
 	areq.m.time = 0;
 	areq.m.flags = 0;
 
-	if (nl_send(&aodvnl, &areq.n) < 0) {
+	if (nl_send(&aodvnl, &areq.n) < 0) {//调用套接字失败
 		DEBUG(LOG_DEBUG, 0, "Failed to send netlink message");
 		return -1;
 	}
@@ -577,15 +622,15 @@ int nl_send_del_route_msg(struct in_addr dest, struct in_addr next_hop, int metr
 	DEBUG(LOG_DEBUG, 0, "Sending del route");
 #endif
 	return nl_kern_route(RTM_DELROUTE, 0, AF_INET, index, &dest, &next_hop,
-			     NULL, metric);
+			     NULL, metric);//调用nl_kern_route进行删除路由表项操作
 }
 
-int nl_send_conf_msg(void)
+int nl_send_conf_msg(void)//nl模块发送配置信息到内核
 {
 	struct {
 		struct nlmsghdr n;
 		kaodv_conf_msg_t cm;
-	} areq;
+	} areq;//定义结构 申请空间 并赋值
 
 	memset(&areq, 0, sizeof(areq));
 
@@ -600,5 +645,5 @@ int nl_send_conf_msg(void)
 #ifdef DEBUG_NETLINK
 	DEBUG(LOG_DEBUG, 0, "Sending aodv conf msg");
 #endif
-	return nl_send(&aodvnl, &areq.n);
+	return nl_send(&aodvnl, &areq.n);//调用套接字发送配置信息
 }

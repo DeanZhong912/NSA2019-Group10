@@ -41,7 +41,15 @@ typedef struct precursor {
 
 typedef u_int32_t hash_value;	/* A hash value */
 
+struct timeval
+{
+__time_t tv_sec;        /* Seconds. */
+__suseconds_t tv_usec;  /* Microseconds. */
+};
+
+
 /* Route table entries */
+//<目标地址，目标序列号，端口标号，下一跳地址，跳数>
 struct rt_table {
     list_t l;
     struct in_addr dest_addr;	/* IP address of the destination */
@@ -71,9 +79,8 @@ struct rt_table {
 #define RT_GATEWAY       0x10
 
 /* Route entry states */
-#define INVALID   0
-#define VALID     1
-
+#define INVALID   0  //路由无效
+#define VALID     1  //路由有效
 
 #define RT_TABLESIZE 64		/* Must be a power of 2 */
 #define RT_TABLEMASK (RT_TABLESIZE - 1)
