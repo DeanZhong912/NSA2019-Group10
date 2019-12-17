@@ -61,7 +61,7 @@ static inline int timeval_add_msec(struct timeval *t, unsigned long msec)
     unsigned long long add;	/* Protect against overflows */
 
     if (!t)
-	return -1;
+	return -1;//返回值为-1
 
     add = t->tv_usec + (msec * 1000);
     t->tv_sec += add / 1000000;
