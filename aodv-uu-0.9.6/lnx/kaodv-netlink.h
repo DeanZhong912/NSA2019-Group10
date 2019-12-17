@@ -70,7 +70,7 @@ enum {
 #define KAODVM_MAX __KAODV_MAX
 };
 
-static struct {
+static struct {//路由信息格式定义
 	int type;
 	char *name;	       
 } typenames[KAODVM_MAX] = { 
@@ -98,7 +98,7 @@ static inline char *kaodv_msg_type_to_str(int type)
 	return "Unknown message type";
 }
 
-typedef struct kaodv_rt_msg { 
+typedef struct kaodv_rt_msg { //定义内核路由信息格式
 	u_int8_t type;
 	u_int32_t src;
 	u_int32_t dst;
@@ -113,7 +113,7 @@ typedef struct kaodv_rt_msg {
 #define KAODV_RT_REPAIR              0x2
 
 /* Two types of route update messages. Packet is coming in our is going out. */
-#define PKT_INBOUND  1
+#define PKT_INBOUND  1 //路由更新数据包的类型 in是入 out 是出
 #define PKT_OUTBOUND 2
 
 /* Send configuration paramaters to the kernel. Could be expanded in the
@@ -127,14 +127,14 @@ typedef struct kaodv_conf_msg {
 /* Stuff below is not exported to user space */
 #ifdef __KERNEL__
 
-int kaodv_netlink_init(void);
-void kaodv_netlink_fini(void);
+int kaodv_netlink_init(void);//netlink模块初始化
+void kaodv_netlink_fini(void);//终止
 
-void kaodv_netlink_send_rt_msg(int type, __u32 src, __u32 dest);
+void kaodv_netlink_send_rt_msg(int type, __u32 src, __u32 dest);//netlink发送路由信息
 void kaodv_netlink_send_rt_update_msg(int type, __u32 src,
-				      __u32 dest, int ifindex);
-void kaodv_netlink_send_rerr_msg(int type, __u32 src, __u32 dest, int ifindex);
-void kaodv_netlink_send_debug_msg(char *buf, int len);
+				      __u32 dest, int ifindex);//发送路由更新
+void kaodv_netlink_send_rerr_msg(int type, __u32 src, __u32 dest, int ifindex);//发送rerr信息
+void kaodv_netlink_send_debug_msg(char *buf, int len);//发送debug信息
 
 #endif				/* __KERNEL__ */
 

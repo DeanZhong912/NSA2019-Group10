@@ -46,24 +46,24 @@
 #include "llf.h"
 #endif
 
-/* Global variables: */
-int log_to_file = 0;
-int rt_log_interval = 0;	/* msecs between routing table logging 0=off */
-int unidir_hack = 0;
-int rreq_gratuitous = 0;
-int expanding_ring_search = 1;
-int internet_gw_mode = 0;
-int local_repair = 0;
-int receive_n_hellos = 0;
-int hello_jittering = 1;
-int optimized_hellos = 0;
-int ratelimit = 1;		/* Option for rate limiting RREQs and RERRs. */
-char *progname;
-int wait_on_reboot = 1;
-int qual_threshold = 0;
-int llfeedback = 0;
-int gw_prefix = 1;
-struct timer worb_timer;	/* Wait on reboot timer */
+/* Global variables: */     //全局变量
+int log_to_file = 0;        //用于记录调试输出
+int rt_log_interval = 0;	//路由表日志间隙 0为未启动 单位是毫秒 /* msecs between routing table logging 0=off */
+int unidir_hack = 0;        //是否检测和避免单向链接
+int rreq_gratuitous = 0;    //是否强制在所有RREQ上设置免费标志
+int expanding_ring_search = 1;//是否禁用扩展环搜索RREQs
+int internet_gw_mode = 0;    //是否启用实验性的Internet网关支持
+int local_repair = 0;        //是否能够本地修复
+int receive_n_hellos = 0;    //在成为邻居节点之前，从主机处接收到n条hello消息
+int hello_jittering = 1;     //切换hello jittering(默认为ON)
+int optimized_hellos = 0;    //是否仅在转发数据时发送hello(实验)
+int ratelimit = 1;		     // 限制rreq和rerr消息发送速率的选项 /* Option for rate limiting RREQs and RERRs. */
+char *progname;              //程序名，主要是文件名？
+int wait_on_reboot = 1;      //是否禁用15秒等待重新启动延迟
+int qual_threshold = 0;      //为控制包设置最小信号质量阈值
+int llfeedback = 0;          //是否启用链路层反馈
+int gw_prefix = 1;           //
+struct timer worb_timer;	 //等待重启计时器/* Wait on reboot timer */
 
 /* Dynamic configuration values */
 int active_route_timeout = ACTIVE_ROUTE_TIMEOUT_HELLO;
@@ -233,7 +233,7 @@ int find_default_gw(void) //读route文件的数据到buff里
 /*
  * Returns information on a network interface given its name...
  */
-struct sockaddr_in *get_if_info(char *ifname, int type) //获取数据帧的信息
+struct sockaddr_in *get_if_info(char *ifname, int type) //获取的信息
 {
     int skfd;
     struct sockaddr_in *ina;

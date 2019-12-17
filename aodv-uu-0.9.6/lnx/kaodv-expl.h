@@ -26,24 +26,24 @@
 
 #include <linux/list.h>
 
-struct expl_entry {
+struct expl_entry {        //路由表信息到期列表
 	struct list_head l;
-	unsigned long expires;
-	unsigned short flags;
-	__u32 daddr;
-	__u32 nhop;
-	int ifindex;
+	unsigned long expires;  //到期时间
+	unsigned short flags;  //是否可修复
+	__u32 daddr;//__u32这个变量占4字节         目的地址
+	__u32 nhop; //下一跳
+	int ifindex;//编号
 };
 
-void kaodv_expl_init(void);
-void kaodv_expl_flush(void);
-int kaodv_expl_get(__u32 daddr, struct expl_entry *e_in);
+void kaodv_expl_init(void);//初始化
+void kaodv_expl_flush(void);//对内核中的expl表清空
+int kaodv_expl_get(__u32 daddr, struct expl_entry *e_in);//按目的地址读取内核中的表项
 int kaodv_expl_add(__u32 daddr, __u32 nhop, unsigned long time,
-		   unsigned short flags, int ifindex);
+		   unsigned short flags, int ifindex);//添加表项
 int kaodv_expl_update(__u32 daddr, __u32 nhop, unsigned long time,
-		      unsigned short flags, int ifindex);
+		      unsigned short flags, int ifindex);//表项更新
 
-int kaodv_expl_del(__u32 daddr);
+int kaodv_expl_del(__u32 daddr);//按目的地址删除expl表项
 void kaodv_expl_fini(void);
 
 #endif				/* __KERNEL__ */
