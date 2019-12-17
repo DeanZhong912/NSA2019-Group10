@@ -28,7 +28,7 @@
 #include "kaodv.h"
 
 /* Simple function (based on R. Stevens) to calculate IP header checksum */
-static u_int16_t ip_csum(unsigned short *buf, int nshorts)//计算ip首部校验和
+static u_int16_t ip_csum(unsigned short *buf, int nshorts)
 {
     u_int32_t sum;
     
@@ -42,21 +42,21 @@ static u_int16_t ip_csum(unsigned short *buf, int nshorts)//计算ip首部校验
     return ~sum;
 }
 
-struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest)//对IP数据包进行封装
+struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest)
 {
 
 
-    struct min_ipenc_hdr *ipe;//IP首部
-    struct sk_buff *nskb;     //skbuff
+    struct min_ipenc_hdr *ipe;    
+    struct sk_buff *nskb;
     struct iphdr *iph;
     
     /* Allocate new data space at head */
     nskb = skb_copy_expand(skb, skb_headroom(skb),
 			   skb_tailroom(skb) +
 			   sizeof(struct min_ipenc_hdr), 
-			   GFP_ATOMIC);//拷贝skbfuff并且扩展成nskb
+			   GFP_ATOMIC);
 
-    if (nskb == NULL) {//操作失败
+    if (nskb == NULL) {
 	printk("Could not allocate new skb\n");
 	kfree_skb(skb);
 	return NULL;	
@@ -64,20 +64,20 @@ struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest)//对IP数据
 
     /* Set old owner */
     if (skb->sk != NULL)
-	skb_set_owner_w(nskb, skb->sk);//把skb的sock赋给nskb
+	skb_set_owner_w(nskb, skb->sk);
 
-    iph = SKB_NETWORK_HDR_IPH(skb);//强制的类型转换skb类型转换成iph的类型
+    iph = SKB_NETWORK_HDR_IPH(skb);
 
-    skb_put(nskb, sizeof(struct min_ipenc_hdr));//在nskb尾部加上大小为min_ipenc_hdr大小
+    skb_put(nskb, sizeof(struct min_ipenc_hdr));
     
     /* Move the IP header */
-    memcpy(nskb->data, skb->data, (iph->ihl << 2));//把skb的IP首部复制到nskb
+    memcpy(nskb->data, skb->data, (iph->ihl << 2));
     /* Move the data */
     memcpy(nskb->data + (iph->ihl << 2) + sizeof(struct min_ipenc_hdr), 
-	   skb->data + (iph->ihl << 2), skb->len - (iph->ihl << 2));//把skb的数据复制发到nskb
+	   skb->data + (iph->ihl << 2), skb->len - (iph->ihl << 2));
     
-    kfree_skb(skb);//释放skb空间
-    skb = nskb;//skb指向nskb
+    kfree_skb(skb);
+    skb = nskb;
     
     /* Update pointers */
     
@@ -101,21 +101,21 @@ struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest)//对IP数据
     /* Recalculate checksums */
     ipe->check = ip_csum((unsigned short *)ipe, 4);
 
-    ip_send_check(iph);//发送
+    ip_send_check(iph);
 
     if (iph->id == 0)
-	    ip_select_ident(iph, skb_dst(skb), NULL);//ip包的id选择
+	    ip_select_ident(iph, skb_dst(skb), NULL);
         
     return skb;
 }
 
-struct sk_buff *ip_pkt_decapsulate(struct sk_buff *skb)//ip解封装
+struct sk_buff *ip_pkt_decapsulate(struct sk_buff *skb)
 {
-    struct min_ipenc_hdr *ipe; 
+    struct min_ipenc_hdr *ipe;
     /* skb->nh.iph is probably not set yet */
-    struct iphdr *iph = SKB_NETWORK_HDR_IPH(skb);//把skb类型转换一下
+    struct iphdr *iph = SKB_NETWORK_HDR_IPH(skb);
 
-    ipe = (struct min_ipenc_hdr *)((char *)iph + (iph->ihl << 2));//获取ip首部赋值给ipe
+    ipe = (struct min_ipenc_hdr *)((char *)iph + (iph->ihl << 2));
 
     iph->protocol = ipe->protocol;
     iph->daddr = ipe->daddr;
@@ -123,9 +123,9 @@ struct sk_buff *ip_pkt_decapsulate(struct sk_buff *skb)//ip解封装
     /* Shift the data to the left, overwriting the encap header */
     memmove(skb->data + (iph->ihl << 2), 
 	    skb->data + (iph->ihl << 2) + sizeof(struct min_ipenc_hdr), 
-	    skb->len - (iph->ihl << 2) - sizeof(struct min_ipenc_hdr));//获取数据
+	    skb->len - (iph->ihl << 2) - sizeof(struct min_ipenc_hdr));
     
-    skb_trim(skb, skb->len - sizeof(struct min_ipenc_hdr));//skb_trim()根据指定长度删除SKB的数据缓存区尾部的数据，如果新长度大于当前长度，则不作处理
+    skb_trim(skb, skb->len - sizeof(struct min_ipenc_hdr));
     
     SKB_SET_NETWORK_HDR(skb, 0);
     iph = SKB_NETWORK_HDR_IPH(skb);

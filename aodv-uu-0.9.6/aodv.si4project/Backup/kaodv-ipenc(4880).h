@@ -31,20 +31,20 @@
 #define IPPROTO_MIPE 55
 
 struct min_ipenc_hdr {
-    u_int8_t protocol;//路由协议
+    u_int8_t protocol;
 #if defined(__LITTLE_ENDIAN)
     u_int8_t res:7;
-    u_int8_t s:1;//源地址
+    u_int8_t s:1;
 #elif defined(__BIG_ENDIAN)
     u_int8_t s:1;
     u_int8_t res:7;
 #else 
 #error  "Adjust your <asm/byteorder.h> defines"
 #endif
-    u_int16_t check;//检验和
-    u_int32_t daddr;//目的地址
+    u_int16_t check;
+    u_int32_t daddr;
  /*    u_int32_t saddr; */
 };
-struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest);//封装ip数据包
-struct sk_buff *ip_pkt_decapsulate(struct sk_buff *skb);//对ip数据包解封装
+struct sk_buff *ip_pkt_encapsulate(struct sk_buff *skb, __u32 dest);
+struct sk_buff *ip_pkt_decapsulate(struct sk_buff *skb);
 #endif				/* _KAODV_IPENC_H */
