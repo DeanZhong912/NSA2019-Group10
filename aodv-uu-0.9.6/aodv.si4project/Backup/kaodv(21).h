@@ -21,7 +21,7 @@
  *****************************************************************************/
 #ifndef _KAODV_H
 #define _KAODV_H
-//对skbuff结构进行了解，使用宏定义了一些类型转化你的函数
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22))
 #define SKB_TAIL_PTR(skb) skb->tail
 #define SKB_NETWORK_HDR_RAW(skb) skb->nh.raw

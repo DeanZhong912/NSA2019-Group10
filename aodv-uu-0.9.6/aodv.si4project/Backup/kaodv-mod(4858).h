@@ -8,10 +8,10 @@
 
 /* Interface information */
 struct if_info {
-	struct list_head l;//填表首部
-	struct in_addr if_addr;//接口地址
-	struct in_addr bc_addr;//广播地址
-	struct net_device *dev;//接口连接上的设备
+	struct list_head l;
+	struct in_addr if_addr;
+	struct in_addr bc_addr;
+	struct net_device *dev;
 };
 
 static LIST_HEAD(ifihead);
@@ -73,13 +73,13 @@ static inline void if_info_purge(void)
 }
 
 static inline int if_info_from_ifindex(struct in_addr *ifa, struct in_addr *bc,
-				   int ifindex)//读取设备号是ifindex的接口的ifaddr和bcaddr
+				   int ifindex)
 {
 	struct list_head *pos;
 	int res = -1;
 
 	read_lock(&ifilock);
-	list_for_each(pos, &ifihead) {//if_addr，bc_addr读取到ifa和bc
+	list_for_each(pos, &ifihead) {
 		struct if_info *ifi = (struct if_info *)pos;
 		if (ifi->dev->ifindex == ifindex) {
 			if (ifa)
@@ -97,5 +97,5 @@ static inline int if_info_from_ifindex(struct in_addr *ifa, struct in_addr *bc,
 }
 
 void kaodv_update_route_timeouts(int hooknum, const struct net_device *dev,
-				 struct iphdr *iph);//根据hooknum的类型对内核路由进行更新
+				 struct iphdr *iph);
 #endif
