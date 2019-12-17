@@ -38,7 +38,7 @@ int trace(const char *fmt, ...)
 	va_end(args);
 	
 	/* Send the message off to user space... */
-	kaodv_netlink_send_debug_msg(buf, len + 1);
+	kaodv_netlink_send_debug_msg(buf, len + 1);//调用netlink模块进行对应操作
 
 	return 0;
 }

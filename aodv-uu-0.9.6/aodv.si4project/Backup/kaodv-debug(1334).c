@@ -19,49 +19,26 @@
  * Author: Erik Nordström, <erik.nordstrom@it.uu.se>
  *
  *****************************************************************************/
-#ifndef _KAODV_DEBUG_H
-#define _KAODV_DEBUG_H
+#include <asm/uaccess.h>
+#include <asm/io.h>
 
-#include <linux/in.h>
+#include "kaodv-debug.h"
+#include "kaodv-netlink.h"
 
-#ifdef DEBUG
-//#undef DEBUG
-#define KAODV_DEBUG(fmt, ...) trace(fmt, ##__VA_ARGS__)
-#else
-#define KAODV_DEBUG(fmt, ...)
-#endif
-
-
-static inline char *print_ip(__u32 addr)//根据地址打印ip地址
+int trace(const char *fmt, ...)
 {
-	static char buf[16 * 4];
-	static int index = 0;
-	char *str;
+	char buf[512];
+	va_list args;
+	int len;
 
-	sprintf(&buf[index], "%d.%d.%d.%d",
-		0x0ff & addr,
-		0x0ff & (addr >> 8),
-		0x0ff & (addr >> 16), 0x0ff & (addr >> 24));
+	va_start(args, fmt);
 
-	str = &buf[index];
-	index += 16;
-	index %= 64;
+	len = vsnprintf(buf, 512, fmt, args);
 
-	return str;
+	va_end(args);
+	
+	/* Send the message off to user space... */
+	kaodv_netlink_send_debug_msg(buf, len + 1);
+
+	return 0;
 }
-
-static inline char *print_eth(char *addr)//根据目的地址打印接口
-{
-	static char buf[30];
-
-	sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
-		(unsigned char)addr[0], (unsigned char)addr[1],
-		(unsigned char)addr[2], (unsigned char)addr[3],
-		(unsigned char)addr[4], (unsigned char)addr[5]);
-
-	return buf;
-}
-
-int trace(const char *fmt, ...);
-
-#endif				/* !KAODV-DEBUG_H_ */

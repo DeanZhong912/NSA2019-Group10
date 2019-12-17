@@ -32,7 +32,7 @@
 #endif
 
 
-static inline char *print_ip(__u32 addr)//根据地址打印ip地址
+static inline char *print_ip(__u32 addr)
 {
 	static char buf[16 * 4];
 	static int index = 0;
@@ -50,7 +50,7 @@ static inline char *print_ip(__u32 addr)//根据地址打印ip地址
 	return str;
 }
 
-static inline char *print_eth(char *addr)//根据目的地址打印接口
+static inline char *print_eth(char *addr)
 {
 	static char buf[30];
 
