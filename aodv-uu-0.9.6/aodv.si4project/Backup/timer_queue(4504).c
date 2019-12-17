@@ -31,22 +31,22 @@
 #include "debug.h"
 #include "list.h"
 
-static LIST(TQ);//静态变量由list.h 得到list_t name = { &(name), &(name) }
+static LIST(TQ);
 
 /* #define DEBUG_TIMER_QUEUE */
 
 #ifdef DEBUG_TIMER_QUEUE
-static void printTQ(list_t * l);//打印定时器队列的函数
+static void printTQ(list_t * l);
 #endif
 #endif				/* NS_PORT */
 
-int NS_CLASS timer_init(struct timer *t, timeout_func_t f, void *data)//定时器初始化函数
+int NS_CLASS timer_init(struct timer *t, timeout_func_t f, void *data)
 {
-    if (!t)//t为0时返回-1
+    if (!t)
 	return -1;
 
-    INIT_LIST_ELM(&t->l);//将t的前驱和后继都设为空
-    t->handler = f;//对定时器的参数一一初始化
+    INIT_LIST_ELM(&t->l);
+    t->handler = f;
     t->data = data;
     t->timeout.tv_sec = 0;
     t->timeout.tv_usec = 0;
@@ -235,22 +235,22 @@ struct timeval *NS_CLASS timer_age_queue()
 
 
 #ifdef DEBUG_TIMER_QUEUE
-void NS_CLASS printTQ(list_t * l)打印定时器队列的函数
+void NS_CLASS printTQ(list_t * l)
 {
     struct timeval now;
     int n = 0;
     list_t *pos;
 
-    gettimeofday(&now, NULL);//获取当前时间
+    gettimeofday(&now, NULL);
 
     fprintf(stderr, "================\n");
-    fprintf(stderr, "%-12s %-4s %lu\n", "left", "n", (unsigned long) l);//将l列表格式化输入到stderr文件中
+    fprintf(stderr, "%-12s %-4s %lu\n", "left", "n", (unsigned long) l);
 
-    list_foreach(pos, l) {//从pos位置向后查找l链表直到结尾
+    list_foreach(pos, l) {
 	struct timer *t = (struct timer *) pos;
 	fprintf(stderr, "%-12ld %-4d %lu\n", timeval_diff(&t->timeout, &now), n,
-		(unsigned long) pos);//将当前位置的定时器打印出来
-	n++;//个数加1
+		(unsigned long) pos);
+	n++;
     }
 }
 #endif
