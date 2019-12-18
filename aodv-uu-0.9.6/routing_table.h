@@ -30,14 +30,14 @@
 typedef struct rt_table rt_table_t;
 
 /* Neighbor struct for active routes in Route Table */
-typedef struct precursor {
+typedef struct precursor {//定义结构体先驱表项
     list_t l;
     struct in_addr neighbor;
 } precursor_t;
 
 #define FIRST_PREC(h) ((precursor_t *)((h).next))
 
-#define seqno_incr(s) ((s == 0) ? 0 : ((s == 0xFFFFFFFF) ? s = 1 : s++))
+#define seqno_incr(s) ((s == 0) ? 0 : ((s == 0xFFFFFFFF) ? s = 1 : s++))//s为0时返回0，否则判断s是否为0xFFFFFFFF,是则令s=1否则s自增1
 
 typedef u_int32_t hash_value;	/* A hash value */
 
@@ -56,9 +56,9 @@ struct rt_table {
     u_int32_t dest_seqno;
     unsigned int ifindex;	/* Network interface index... */
     struct in_addr next_hop;	/* IP address of the next hop to the dest */
-    u_int8_t hcnt;		/* Distance (in hops) to the destination */
-    u_int16_t flags;		/* Routing flags */
-    u_int8_t state;		/* The state of this entry */
+    u_int8_t hcnt;		/* Distance (in hops) to the destination *///距离
+    u_int16_t flags;		/* Routing flags *///标志符
+    u_int8_t state;		/* The state of this entry *///状态
     struct timer rt_timer;	/* The timer associated with this entry */
     struct timer ack_timer;	/* RREP_ack timer for this destination */
     struct timer hello_timer;
@@ -86,37 +86,37 @@ struct rt_table {
 #define RT_TABLEMASK (RT_TABLESIZE - 1)
 
 struct routing_table {
-    unsigned int num_entries;
-    unsigned int num_active;
+    unsigned int num_entries;//路由表加入项数
+    unsigned int num_active;//活跃节点数
     list_t tbl[RT_TABLESIZE];
 };
 
-void precursor_list_destroy(rt_table_t * rt);
+void precursor_list_destroy(rt_table_t * rt);//先驱链表销毁
 #endif				/* NS_NO_GLOBALS */
 
 #ifndef NS_NO_DECLARATIONS
 
 struct routing_table rt_tbl;
 
-void rt_table_init();
-void rt_table_destroy();
-rt_table_t *rt_table_insert(struct in_addr dest, struct in_addr next,
+void rt_table_init();//初始化
+void rt_table_destroy();//销毁
+rt_table_t *rt_table_insert(struct in_addr dest, struct in_addr next,//插入
 			    u_int8_t hops, u_int32_t seqno, u_int32_t life,
 			    u_int8_t state, u_int16_t flags,
 			    unsigned int ifindex);
-rt_table_t *rt_table_update(rt_table_t * rt, struct in_addr next, u_int8_t hops,
+rt_table_t *rt_table_update(rt_table_t * rt, struct in_addr next, u_int8_t hops,//更新路由表
 			    u_int32_t seqno, u_int32_t lifetime, u_int8_t state,
 			    u_int16_t flags);
-NS_INLINE rt_table_t *rt_table_update_timeout(rt_table_t * rt,
+NS_INLINE rt_table_t *rt_table_update_timeout(rt_table_t * rt,//更新路由表定时器信息
 					      u_int32_t lifetime);
-void rt_table_update_route_timeouts(rt_table_t * fwd_rt, rt_table_t * rev_rt);
-rt_table_t *rt_table_find(struct in_addr dest);
-rt_table_t *rt_table_find_gateway();
-int rt_table_update_inet_rt(rt_table_t * gw, u_int32_t life);
-int rt_table_invalidate(rt_table_t * rt);
-void rt_table_delete(rt_table_t * rt);
-void precursor_add(rt_table_t * rt, struct in_addr addr);
-void precursor_remove(rt_table_t * rt, struct in_addr addr);
+void rt_table_update_route_timeouts(rt_table_t * fwd_rt, rt_table_t * rev_rt);//更新输入或者输出包路由的定时器信息
+rt_table_t *rt_table_find(struct in_addr dest);//根据目的地址查找路由表项
+rt_table_t *rt_table_find_gateway();//寻找本机的默认网关
+int rt_table_update_inet_rt(rt_table_t * gw, u_int32_t life);//设置默认状态下所有包下一跳均转发给默认网关
+int rt_table_invalidate(rt_table_t * rt);//路由表超时时将其无效化
+void rt_table_delete(rt_table_t * rt);//删除一个路由表项
+void precursor_add(rt_table_t * rt, struct in_addr addr);//在路由表项的先驱表中添加一个节点
+void precursor_remove(rt_table_t * rt, struct in_addr addr);//在路由表项的先驱表中移除一个节点
 
 #endif				/* NS_NO_DECLARATIONS */
 
