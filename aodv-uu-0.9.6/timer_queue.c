@@ -58,26 +58,26 @@ int NS_CLASS timer_init(struct timer *t, timeout_func_t f, void *data)//定时�
 /* Called when a timer should timeout */
 void NS_CLASS timer_timeout(struct timeval *now)
 {
-    LIST(expTQ);
-    list_t *pos, *tmp;
+    LIST(expTQ);//list_t name = { &(name), &(name) }
+    list_t *pos, *tmp;//当前位置节点和暂时保存的节点
 
 #ifdef DEBUG_TIMER_QUEUE
     printf("\n######## timer_timeout: called!!\n");
 #endif
     /* Remove expired timers from TQ and add them to expTQ */
     list_foreach_safe(pos, tmp, &TQ) {
-	struct timer *t = (struct timer *) pos;
+	struct timer *t = (struct timer *) pos;//向下遍历
 
-	if (timeval_diff(&t->timeout, now) > 0)
+	if (timeval_diff(&t->timeout, now) > 0)//超时时间大于0时停止，说明已经超时
 	    break;
 
-	list_detach(&t->l);
-	list_add_tail(&expTQ, &t->l);
+	list_detach(&t->l);//将l初始化，前驱和后继都赋为NULL
+	list_add_tail(&expTQ, &t->l);//将初始节点设为expTQ
     }
 
     /* Execute expired timers in expTQ safely by removing them at the head */
     while (!list_empty(&expTQ)) {
-	struct timer *t = (struct timer *) list_first(&expTQ);
+	struct timer *t = (struct timer *) list_first(&expTQ);//从链表中取出第一个不为空的expTQ作为定时器
 	list_detach(&t->l);
 	t->used = 0;
 #ifdef DEBUG_TIMER_QUEUE
@@ -106,13 +106,13 @@ NS_STATIC void NS_CLASS timer_add(struct timer *t)
     if (!t->handler) {
 	perror("NULL handler!!!\n");
 	exit(-1);
-    }
+    }//检查属性是否为空
 
     /* Make sure we remove unexpired timers before adding a new timeout... */
     if (t->used)
 	timer_remove(t);
 
-    t->used = 1;
+    t->used = 1;//表示已经将t加入定时器队列
 
 #ifdef DEBUG_TIMER_QUEUE
     printf("New timer added!\n");
@@ -125,7 +125,7 @@ NS_STATIC void NS_CLASS timer_add(struct timer *t)
 
 	list_foreach(pos, &TQ) {
 	    struct timer *curr = (struct timer *) pos;
-	    if (timeval_diff(&t->timeout, &curr->timeout) < 0) {
+	    if (timeval_diff(&t->timeout, &curr->timeout) < 0) {//当t与当前是timeout差值小于0时，退出
 		break;
 	    }
 	}
@@ -133,12 +133,12 @@ NS_STATIC void NS_CLASS timer_add(struct timer *t)
     }
 
 #ifdef DEBUG_TIMER_QUEUE
-    printTQ(&TQ);
+    printTQ(&TQ);//打印定时器列表，此时t已经加入列表中
 #endif
     return;
 }
 
-int NS_CLASS timer_remove(struct timer *t)
+int NS_CLASS timer_remove(struct timer *t)//定时器移除函数
 {
     int res = 1;
 
@@ -146,12 +146,12 @@ int NS_CLASS timer_remove(struct timer *t)
 	return -1;
 
 
-    if (list_unattached(&t->l))
+    if (list_unattached(&t->l))//表示t为独立节点时
 	res = 0;
     else
-	list_detach(&t->l);
+	list_detach(&t->l);//将t设置为独立节点，即删除t
 
-    t->used = 0;
+    t->used = 0;//表示t已经不再队列中
 
     return res;
 }
@@ -159,7 +159,7 @@ int NS_CLASS timer_remove(struct timer *t)
 
 int NS_CLASS timer_timeout_now(struct timer *t)
 {
-    if (timer_remove(t)) {
+    if (timer_remove(t)) {//当成功移除t时
 
 #ifdef NS_PORT
 	(*this.*t->handler) (t->data);
@@ -172,22 +172,22 @@ int NS_CLASS timer_timeout_now(struct timer *t)
 }
 
 
-void NS_CLASS timer_set_timeout(struct timer *t, long msec)
+void NS_CLASS timer_set_timeout(struct timer *t, long msec)//将msec加入到t的timeout中
 {
     if (t->used) {
 	timer_remove(t);
-    }
+    }//若t在队列中，将t移除
 
-    gettimeofday(&t->timeout, NULL);
+    gettimeofday(&t->timeout, NULL);//获取当前的时间赋值给t的timeout
 
     if (msec < 0)
 	DEBUG(LOG_WARNING, 0, "Negative timeout!!!");
 
     t->timeout.tv_usec += msec * 1000;
     t->timeout.tv_sec += t->timeout.tv_usec / 1000000;
-    t->timeout.tv_usec = t->timeout.tv_usec % 1000000;
+    t->timeout.tv_usec = t->timeout.tv_usec % 1000000;//加运算并处理单位
 
-    timer_add(t);
+    timer_add(t);//再将t加入队列中
 }
 
 long timer_left(struct timer *t)
@@ -197,9 +197,9 @@ long timer_left(struct timer *t)
     if (!t)
 	return -1;
 
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, NULL);//获取当前时间赋值给now
 
-    return timeval_diff(&now, &t->timeout);
+    return timeval_diff(&now, &t->timeout);//比较now和t的timeout，查看t超时多少时间
 }
 struct timeval *NS_CLASS timer_age_queue()
 {
@@ -209,9 +209,9 @@ struct timeval *NS_CLASS timer_age_queue()
 
     gettimeofday(&now, NULL);
 
-    fflush(stdout);
+    fflush(stdout);//清楚缓冲区
 
-    if (list_empty(&TQ))
+    if (list_empty(&TQ))//链表已经结束
 	return NULL;
 
     timer_timeout(&now);
@@ -224,7 +224,7 @@ struct timeval *NS_CLASS timer_age_queue()
     t = (struct timer *) TQ.next;
 
     remaining.tv_usec = (t->timeout.tv_usec - now.tv_usec);
-    remaining.tv_sec = (t->timeout.tv_sec - now.tv_sec);
+    remaining.tv_sec = (t->timeout.tv_sec - now.tv_sec);//查看t还剩多少时间就超时了
 
     if (remaining.tv_usec < 0) {
 	remaining.tv_usec += 1000000;

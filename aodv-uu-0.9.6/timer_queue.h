@@ -75,14 +75,14 @@ static inline int timeval_add_msec(struct timeval *t, unsigned long msec)//以�
 void timer_queue_init();//定时器队列初始化
 int timer_remove(struct timer *t);//定时器移除
 void timer_set_timeout(struct timer *t, long msec);//设置定时器超时时间
-int timer_timeout_now(struct timer *t);//获取定时器当前的超时时间
-struct timeval *timer_age_queue();//定时器的时间队列
+int timer_timeout_now(struct timer *t);//是否取出定时器列表的一个节点
+struct timeval *timer_age_queue();//查看定时器还有多久超时
 /* timer_init should be called for every newly allocated timer */
 int timer_init(struct timer *t, timeout_func_t f, void *data);//定时器初始化
 
 #ifdef NS_PORT
 void timer_add(struct timer *t);//添加定时器
-void timer_timeout(struct timeval *now);//定时器超时
+void timer_timeout(struct timeval *now);//定时器是否超时
 
 #ifdef DEBUG_TIMER_QUEUE
 void NS_CLASS printTQ();//打印定时器队列
