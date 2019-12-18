@@ -30,7 +30,7 @@
 
 #define IP_DATA_MAX_LEN 60 + 8	/* Max IP header + 64 bits of data */
 
-struct ip_data {
+struct ip_data {//IP数据结构体
     char data[IP_DATA_MAX_LEN];
     int len;
 };
@@ -38,25 +38,25 @@ struct ip_data {
 /* This is a list of nodes that route discovery are performed for */
 typedef struct seek_list {
     list_t l;
-    struct in_addr dest_addr;
-    u_int32_t dest_seqno;
+    struct in_addr dest_addr;//目的地址
+    u_int32_t dest_seqno;//序列号
     struct ip_data *ipd;
     u_int8_t flags;		/* The flags we are using for resending the RREQ */
     int reqs;
     int ttl;
-    struct timer seek_timer;
+    struct timer seek_timer;//查找时间定时器
 } seek_list_t;
 #endif				/* NS_NO_GLOBALS */
 
 #ifndef NS_NO_DECLARATIONS
 seek_list_t *seek_list_insert(struct in_addr dest_addr, u_int32_t dest_seqno,
-			      int ttl, u_int8_t flags, struct ip_data *ipd);
-int seek_list_remove(seek_list_t * entry);
-seek_list_t *seek_list_find(struct in_addr dest_addr);
+			      int ttl, u_int8_t flags, struct ip_data *ipd);//插入函数
+int seek_list_remove(seek_list_t * entry);//移除函数
+seek_list_t *seek_list_find(struct in_addr dest_addr);//根据目的地址查找节点并返回
 
 #ifdef NS_PORT
 #ifdef SEEK_LIST_DEBUG
-void seek_list_print();
+void seek_list_print();//打印函数
 #endif
 #endif				/* NS_PORT */
 
