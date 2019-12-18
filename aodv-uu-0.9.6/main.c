@@ -48,7 +48,7 @@
 
 /* Global variables: */     //全局变量
 int log_to_file = 0;        //用于记录调试输出
-int rt_log_interval = 0;	//路由表日志间隙 0为未启动 单位是毫秒 /* msecs between routing table logging 0=off */
+int rt_log_interval = 0;	//路由表日志间隙 0为未启动 单位是毫秒  
 int unidir_hack = 0;        //是否检测和避免单向链接
 int rreq_gratuitous = 0;    //是否强制在所有RREQ上设置免费标志
 int expanding_ring_search = 1;//是否禁用扩展环搜索RREQs
@@ -57,7 +57,7 @@ int local_repair = 0;        //是否能够本地修复
 int receive_n_hellos = 0;    //在成为邻居节点之前，从主机处接收到n条hello消息
 int hello_jittering = 1;     //切换hello jittering(默认为ON)
 int optimized_hellos = 0;    //是否仅在转发数据时发送hello(实验)
-int ratelimit = 1;		     // 限制rreq和rerr消息发送速率的选项 /* Option for rate limiting RREQs and RERRs. */
+int ratelimit = 1;		     // 限制rreq和rerr消息发送速率的选项 
 char *progname;              //程序名，主要是文件名？
 int wait_on_reboot = 1;      //是否禁用15秒等待重新启动延迟
 int qual_threshold = 0;      //为控制包设置最小信号质量阈值
@@ -504,16 +504,16 @@ int main(int argc, char **argv)
     sigact.sa_handler = signal_handler;
         
     /* This server should shut down on these signals. */
-    sigaction(SIGTERM, &sigact, 0);
-    sigaction(SIGHUP, &sigact, 0);
-    sigaction(SIGINT, &sigact, 0);
+    sigaction(SIGTERM, &sigact, 0);                         //SIGTERM 终止进程 软件中止信号
+    sigaction(SIGHUP, &sigact, 0);							//SIGHUP 终止进程 终端线路挂断
+    sigaction(SIGINT, &sigact, 0);							//SIGINT 终止进程 中断进程
     
     sigaddset(&mask, SIGTERM);
     sigaddset(&mask, SIGHUP);
     sigaddset(&mask, SIGINT);
     /* Only capture segmentation faults when we are not debugging... */
 #ifndef DEBUG
-    sigaddset(&mask, SIGSEGV);
+    sigaddset(&mask, SIGSEGV);                           //SIGSEGV 建立core文件 段非法错误
 #endif
 
     /* Block the signals we are watching here so that we can
