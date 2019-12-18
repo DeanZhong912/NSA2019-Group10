@@ -504,16 +504,16 @@ int main(int argc, char **argv)
     sigact.sa_handler = signal_handler;
         
     /* This server should shut down on these signals. */
-    sigaction(SIGTERM, &sigact, 0);
-    sigaction(SIGHUP, &sigact, 0);
-    sigaction(SIGINT, &sigact, 0);
+    sigaction(SIGTERM, &sigact, 0);                         //SIGTERM 终止进程 软件中止信号
+    sigaction(SIGHUP, &sigact, 0);							//SIGHUP 终止进程 终端线路挂断
+    sigaction(SIGINT, &sigact, 0);							//SIGINT 终止进程 中断进程
     
     sigaddset(&mask, SIGTERM);
     sigaddset(&mask, SIGHUP);
     sigaddset(&mask, SIGINT);
     /* Only capture segmentation faults when we are not debugging... */
 #ifndef DEBUG
-    sigaddset(&mask, SIGSEGV);
+    sigaddset(&mask, SIGSEGV);                           //SIGSEGV 建立core文件 段非法错误
 #endif
 
     /* Block the signals we are watching here so that we can

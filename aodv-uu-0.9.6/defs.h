@@ -85,26 +85,27 @@
 #endif
 
 /* Data for a network device */
-struct dev_info {       //设备信息
-    int enabled;		/* 1 if struct is used, else 0 */
-    int sock;			/* AODV socket associated with this device */
+struct dev_info {       //设备信息           设备即接口 interface
+    int enabled;		/* 1 if struct is used, else 0  有效为1 无效为0*/
+    int sock;			/* AODV socket associated with this device AODV与这个设备关联的socket*/
 #ifdef CONFIG_GATEWAY
-    int psock;			/* Socket to send buffered data packets. */
+    int psock;			/* Socket to send buffered data packets. 发送缓冲数据包的socket*/
 #endif
-    unsigned int ifindex;
+    unsigned int ifindex;    //接口号
     char ifname[IFNAMSIZ];
-    struct in_addr ipaddr;	/* The local IP address */
-    struct in_addr netmask;	/* The netmask we use */
-    struct in_addr broadcast;
+    struct in_addr ipaddr;	/* The local IP address 本地IP地址*/
+    struct in_addr netmask;	/* The netmask we use 子网掩码*/
+    struct in_addr broadcast;    //广播地址
 };
 
 struct host_info {
-    u_int32_t seqno;		/* Sequence number */
-    struct timeval bcast_time;	/* The time of the last broadcast msg sent */
-    struct timeval fwd_time;	/* The time a data packet was last forwarded */
+    u_int32_t seqno;		/* Sequence number 序列号*/   
+    struct timeval bcast_time;	/* The time of the last broadcast msg sent 最新一次广播消息发送的时间*/
+    struct timeval fwd_time;	/* The time a data packet was last forwarded 最新一次转发数据包的时间*/
     u_int32_t rreq_id;		/* RREQ id */
-    int nif;			/* Number of interfaces to broadcast on */
-        struct dev_info devs[MAX_NR_INTERFACES+1]; /* Add +1 for returning as "error" in ifindex2devindex. */
+    int nif;			/* Number of interfaces to broadcast on 需要广播的接口的数量*/
+        struct dev_info devs[MAX_NR_INTERFACES+1]; /* Add +1 for returning as "error" in ifindex2devindex. 
+        											10+1 多加1是为了返回 作为一个错误在下面的那个函数中*/
 };
 
 
