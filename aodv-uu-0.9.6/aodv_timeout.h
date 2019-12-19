@@ -28,14 +28,14 @@
 #endif				/* NS_NO_GLOBALS */
 
 #ifndef NS_NO_DECLARATIONS
-void route_delete_timeout(void *arg);
-void local_repair_timeout(void *arg);
-void route_discovery_timeout(void *arg);
-void route_expire_timeout(void *arg);
-void hello_timeout(void *arg);
-void rrep_ack_timeout(void *arg);
-void wait_on_reboot_timeout(void *arg);
-void packet_queue_timeout(void *arg);
+void route_delete_timeout(void *arg);//路由删除超时
+void local_repair_timeout(void *arg);//本地修复超时
+void route_discovery_timeout(void *arg);//路由发现超时
+void route_expire_timeout(void *arg);//路由到期超时
+void hello_timeout(void *arg);//hello消息超时
+void rrep_ack_timeout(void *arg);//回复确认超时
+void wait_on_reboot_timeout(void *arg);//重启等待超时
+void packet_queue_timeout(void *arg);//数据包排队超时
 #endif				/* NS_NO_DECLARATIONS */
 
 #endif				/* AODV_TIMEOUT_H */
