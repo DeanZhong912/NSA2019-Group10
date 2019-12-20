@@ -39,11 +39,11 @@
 #include "nl.h"
 #endif				/* NS_PORT */
 
-static unsigned int hashing(struct in_addr *addr, hash_value * hash);
+static unsigned int hashing(struct in_addr *addr, hash_value * hash);//计算哈希值
 
 extern int llfeedback;
 
-void NS_CLASS rt_table_init()
+void NS_CLASS rt_table_init()//路由表初始化
 {
 	int i;
 
@@ -52,34 +52,34 @@ void NS_CLASS rt_table_init()
 
 	/* We do a for loop here... NS does not like us to use memset() */
 	for (i = 0; i < RT_TABLESIZE; i++) {
-		INIT_LIST_HEAD(&rt_tbl.tbl[i]);
+		INIT_LIST_HEAD(&rt_tbl.tbl[i]);//用数组对路由表初始化
 	}
 }
 
-void NS_CLASS rt_table_destroy()
+void NS_CLASS rt_table_destroy()//销毁路由表
 {
 	int i;
 	list_t *tmp = NULL, *pos = NULL;
 
 	for (i = 0; i < RT_TABLESIZE; i++) {
-		list_foreach_safe(pos, tmp, &rt_tbl.tbl[i]) {
+		list_foreach_safe(pos, tmp, &rt_tbl.tbl[i]) {//安全遍历
 			rt_table_t *rt = (rt_table_t *) pos;
 
-			rt_table_delete(rt);
+			rt_table_delete(rt);//删除节点
 		}
 	}
 }
 
 /* Calculate a hash value and table index given a key... */
-unsigned int hashing(struct in_addr *addr, hash_value * hash)
+unsigned int hashing(struct in_addr *addr, hash_value * hash)//计算哈希值
 {
 	/*   *hash = (*addr & 0x7fffffff); */
 	*hash = (hash_value) addr->s_addr;
 
-	return (*hash & RT_TABLEMASK);
+	return (*hash & RT_TABLEMASK);//#define RT_TABLEMASK (RT_TABLESIZE - 1)
 }
 
-rt_table_t *NS_CLASS rt_table_insert(struct in_addr dest_addr,
+rt_table_t *NS_CLASS rt_table_insert(struct in_addr dest_addr,//路由表中插入信息
 				     struct in_addr next,
 				     u_int8_t hops, u_int32_t seqno,
 				     u_int32_t life, u_int8_t state,
@@ -93,26 +93,26 @@ rt_table_t *NS_CLASS rt_table_insert(struct in_addr dest_addr,
 	nm.s_addr = 0;
 
 	/* Calculate hash key */
-	index = hashing(&dest_addr, &hash);
+	index = hashing(&dest_addr, &hash);//计算哈希值
 
 	/* Check if we already have an entry for dest_addr */
-	list_foreach(pos, &rt_tbl.tbl[index]) {
+	list_foreach(pos, &rt_tbl.tbl[index]) {//从当前位置向后遍历表
 		rt = (rt_table_t *) pos;
-		if (memcmp(&rt->dest_addr, &dest_addr, sizeof(struct in_addr))
+		if (memcmp(&rt->dest_addr, &dest_addr, sizeof(struct in_addr))//比较buf1和buf2的前count个字节 int memcmp(const void *buf1, const void *buf2, unsigned int count)
 		    == 0) {
 			DEBUG(LOG_INFO, 0, "%s already exist in routing table!",
-			      ip_to_str(dest_addr));
+			      ip_to_str(dest_addr));//将ip从int型转化为字符串型
 
 			return NULL;
 		}
 	}
 
-	if ((rt = (rt_table_t *) malloc(sizeof(rt_table_t))) == NULL) {
+	if ((rt = (rt_table_t *) malloc(sizeof(rt_table_t))) == NULL) {//开辟空间
 		fprintf(stderr, "Malloc failed!\n");
 		exit(-1);
 	}
 
-	memset(rt, 0, sizeof(rt_table_t));
+	memset(rt, 0, sizeof(rt_table_t));//memset(数组名, 值, sizeof(数组名));用于初始化数组
 
 	rt->dest_addr = dest_addr;
 	rt->next_hop = next;
@@ -121,13 +121,13 @@ rt_table_t *NS_CLASS rt_table_insert(struct in_addr dest_addr,
 	rt->hcnt = hops;
 	rt->ifindex = ifindex;
 	rt->hash = hash;
-	rt->state = state;
+	rt->state = state;//赋值操作
 
 	timer_init(&rt->rt_timer, &NS_CLASS route_expire_timeout, rt);
 
 	timer_init(&rt->ack_timer, &NS_CLASS rrep_ack_timeout, rt);
 
-	timer_init(&rt->hello_timer, &NS_CLASS hello_timeout, rt);
+	timer_init(&rt->hello_timer, &NS_CLASS hello_timeout, rt);//初始化操作
 
 	rt->last_hello_time.tv_sec = 0;
 	rt->last_hello_time.tv_usec = 0;
@@ -141,39 +141,39 @@ rt_table_t *NS_CLASS rt_table_insert(struct in_addr dest_addr,
 	rt_tbl.num_entries++;
 
 	DEBUG(LOG_INFO, 0, "Inserting %s (bucket %d) next hop %s",
-	      ip_to_str(dest_addr), index, ip_to_str(next));
+	      ip_to_str(dest_addr), index, ip_to_str(next));//转化格式并检查数据帧格式
 
-	list_add(&rt_tbl.tbl[index], &rt->l);
+	list_add(&rt_tbl.tbl[index], &rt->l);//添加路由表项
 
-	if (state == INVALID) {
+	if (state == INVALID) {//若路由无效
 
 		if (flags & RT_REPAIR) {
-			rt->rt_timer.handler = &NS_CLASS local_repair_timeout;
-			life = ACTIVE_ROUTE_TIMEOUT;
+			rt->rt_timer.handler = &NS_CLASS local_repair_timeout;//修复定时器操作
+			life = ACTIVE_ROUTE_TIMEOUT;//active_route_timeout
 		} else {
-			rt->rt_timer.handler = &NS_CLASS route_delete_timeout;
-			life = DELETE_PERIOD;
+			rt->rt_timer.handler = &NS_CLASS route_delete_timeout;//删除定时器操作
+			life = DELETE_PERIOD;//delete_period
 		}
 
 	} else {
-		rt_tbl.num_active++;
+		rt_tbl.num_active++;//活跃节点数增加
 #ifndef NS_PORT
 		nl_send_add_route_msg(dest_addr, next, hops, life, flags,
-				      ifindex);
+				      ifindex);//用于内核发送增加路由表信息
 #endif
 	}
 
 #ifdef CONFIG_GATEWAY_DISABLE
 	if (rt->flags & RT_GATEWAY)
-		rt_table_update_inet_rt(rt, life);
+		rt_table_update_inet_rt(rt, life);//更新插入表项的信息，生存时间
 #endif
 
 //#ifdef NS_PORT
 	DEBUG(LOG_INFO, 0, "New timer for %s, life=%d",
-	      ip_to_str(rt->dest_addr), life);
+	      ip_to_str(rt->dest_addr), life);//数据转换并检查格式
 
 	if (life != 0)
-		timer_set_timeout(&rt->rt_timer, life);
+		timer_set_timeout(&rt->rt_timer, life);//将life时间加入到rt的定时器中
 //#endif
 	/* In case there are buffered packets for this destination, we
 	 * send them on the new route. */
@@ -188,7 +188,7 @@ rt_table_t *NS_CLASS rt_table_insert(struct in_addr dest_addr,
 	return rt;
 }
 
-rt_table_t *NS_CLASS rt_table_update(rt_table_t * rt, struct in_addr next,
+rt_table_t *NS_CLASS rt_table_update(rt_table_t * rt, struct in_addr next,//更新路由表
 				     u_int8_t hops, u_int32_t seqno,
 				     u_int32_t lifetime, u_int8_t state,
 				     u_int16_t flags)
@@ -196,7 +196,7 @@ rt_table_t *NS_CLASS rt_table_update(rt_table_t * rt, struct in_addr next,
 	struct in_addr nm;
 	nm.s_addr = 0;
 
-	if (rt->state == INVALID && state == VALID) {
+	if (rt->state == INVALID && state == VALID) {//将到期的但是即将变得活跃的表项加入到路由表项中
 
 		/* If this previously was an expired route, but will now be
 		   active again we must add it to the kernel routing
@@ -231,7 +231,7 @@ rt_table_t *NS_CLASS rt_table_update(rt_table_t * rt, struct in_addr next,
 		/* Must also do a "link break" when updating a 1 hop
 		neighbor in case another routing entry use this as
 		next hop... */
-		neighbor_link_break(rt);
+		neighbor_link_break(rt);//邻居节点断开处理
 	}
 	
 	rt->flags = flags;
@@ -268,7 +268,7 @@ rt_table_t *NS_CLASS rt_table_update(rt_table_t * rt, struct in_addr next,
 	return rt;
 }
 
-NS_INLINE rt_table_t *NS_CLASS rt_table_update_timeout(rt_table_t * rt,
+NS_INLINE rt_table_t *NS_CLASS rt_table_update_timeout(rt_table_t * rt,//更新路由表的定时器信息
 						       u_int32_t lifetime)
 {
 	struct timeval new_timeout;
@@ -282,7 +282,7 @@ NS_INLINE rt_table_t *NS_CLASS rt_table_update_timeout(rt_table_t * rt,
 		gettimeofday(&new_timeout, NULL);
 		timeval_add_msec(&new_timeout, lifetime);
 
-		if (timeval_diff(&rt->rt_timer.timeout, &new_timeout) < 0)
+		if (timeval_diff(&rt->rt_timer.timeout, &new_timeout) < 0)//判断当前定时器和新的定时器的时间
 			timer_set_timeout(&rt->rt_timer, lifetime);
 	} else
 		timer_set_timeout(&rt->rt_timer, lifetime);
@@ -291,7 +291,7 @@ NS_INLINE rt_table_t *NS_CLASS rt_table_update_timeout(rt_table_t * rt,
 }
 
 /* Update route timeouts in response to an incoming or outgoing data packet. */
-void NS_CLASS rt_table_update_route_timeouts(rt_table_t * fwd_rt,
+void NS_CLASS rt_table_update_route_timeouts(rt_table_t * fwd_rt,//更新输入或输出包路由时的定时器
 					     rt_table_t * rev_rt)
 {
 	rt_table_t *next_hop_rt = NULL;
@@ -343,26 +343,26 @@ void NS_CLASS rt_table_update_route_timeouts(rt_table_t * fwd_rt,
 	}
 }
 
-rt_table_t *NS_CLASS rt_table_find(struct in_addr dest_addr)
+rt_table_t *NS_CLASS rt_table_find(struct in_addr dest_addr)//根据目的地址查找路由表项
 {
 	hash_value hash;
 	unsigned int index;
 	list_t *pos;
 
-	if (rt_tbl.num_entries == 0)
+	if (rt_tbl.num_entries == 0)//路由表中没有信息
 		return NULL;
 
 	/* Calculate index */
 	index = hashing(&dest_addr, &hash);
 
 	/* Handle collisions: */
-	list_foreach(pos, &rt_tbl.tbl[index]) {
+	list_foreach(pos, &rt_tbl.tbl[index]) {//遍历路由表
 		rt_table_t *rt = (rt_table_t *) pos;
 
 		if (rt->hash != hash)
 			continue;
 
-		if (memcmp(&dest_addr, &rt->dest_addr, sizeof(struct in_addr))
+		if (memcmp(&dest_addr, &rt->dest_addr, sizeof(struct in_addr))//比较字节
 		    == 0)
 			return rt;
 
@@ -370,17 +370,17 @@ rt_table_t *NS_CLASS rt_table_find(struct in_addr dest_addr)
 	return NULL;
 }
 
-rt_table_t *NS_CLASS rt_table_find_gateway()
+rt_table_t *NS_CLASS rt_table_find_gateway()//查找默认网关
 {
 	rt_table_t *gw = NULL;
 	int i;
 
 	for (i = 0; i < RT_TABLESIZE; i++) {
 		list_t *pos;
-		list_foreach(pos, &rt_tbl.tbl[i]) {
+		list_foreach(pos, &rt_tbl.tbl[i]) {//遍历
 			rt_table_t *rt = (rt_table_t *) pos;
 
-			if (rt->flags & RT_GATEWAY && rt->state == VALID) {
+			if (rt->flags & RT_GATEWAY && rt->state == VALID) {//查找到默认网关
 				if (!gw || rt->hcnt < gw->hcnt)
 					gw = rt;
 			}
@@ -390,7 +390,7 @@ rt_table_t *NS_CLASS rt_table_find_gateway()
 }
 
 #ifdef CONFIG_GATEWAY
-int NS_CLASS rt_table_update_inet_rt(rt_table_t * gw, u_int32_t life)
+int NS_CLASS rt_table_update_inet_rt(rt_table_t * gw, u_int32_t life)//设置默认状态下，所有包的下一跳均转发给默认网关
 {
 	int n = 0;
 	int i;
@@ -403,8 +403,9 @@ int NS_CLASS rt_table_update_inet_rt(rt_table_t * gw, u_int32_t life)
 		list_foreach(pos, &rt_tbl.tbl[i]) {
 			rt_table_t *rt = (rt_table_t *) pos;
 
-			if (rt->flags & RT_INET_DEST && rt->state == VALID) {
-				rt_table_update(rt, gw->dest_addr, gw->hcnt, 0,
+			if (rt->flags & RT_INET_DEST && rt->state == VALID) {/* Mark for Internet destinations (to be relayed
+				 * through a Internet gateway. */
+				rt_table_update(rt, gw->dest_addr, gw->hcnt, 0,//更新网关信息
 						life, VALID, rt->flags);
 				n++;
 			}
@@ -415,7 +416,7 @@ int NS_CLASS rt_table_update_inet_rt(rt_table_t * gw, u_int32_t life)
 #endif				/* CONFIG_GATEWAY_DISABLED */
 
 /* Route expiry and Deletion. */
-int NS_CLASS rt_table_invalidate(rt_table_t * rt)
+int NS_CLASS rt_table_invalidate(rt_table_t * rt)//路由表超时无效化
 {
 	struct timeval now;
 
@@ -427,22 +428,22 @@ int NS_CLASS rt_table_invalidate(rt_table_t * rt)
 	/* If the route is already invalidated, do nothing... */
 	if (rt->state == INVALID) {
 		DEBUG(LOG_DEBUG, 0, "Route %s already invalidated!!!",
-		      ip_to_str(rt->dest_addr));
+		      ip_to_str(rt->dest_addr));//路由已经过期无效了
 		return -1;
 	}
 
 	if (rt->hello_timer.used) {
 		DEBUG(LOG_DEBUG, 0, "last HELLO: %ld",
-		      timeval_diff(&now, &rt->last_hello_time));
+		      timeval_diff(&now, &rt->last_hello_time));//判断过期
 	}
 
 	/* Remove any pending, but now obsolete timers. */
 	timer_remove(&rt->rt_timer);
 	timer_remove(&rt->hello_timer);
-	timer_remove(&rt->ack_timer);
+	timer_remove(&rt->ack_timer);//移除操作
 
 	/* Mark the route as invalid */
-	rt->state = INVALID;
+	rt->state = INVALID;//无效化
 	rt_tbl.num_active--;
 
 	rt->hello_cnt = 0;
@@ -466,7 +467,7 @@ int NS_CLASS rt_table_invalidate(rt_table_t * rt)
 	if (rt->flags & RT_GATEWAY) {
 		int i;
 
-		rt_table_t *gw = rt_table_find_gateway();
+		rt_table_t *gw = rt_table_find_gateway();//找到默认网关
 
 		for (i = 0; i < RT_TABLESIZE; i++) {
 			list_t *pos;
@@ -494,7 +495,7 @@ int NS_CLASS rt_table_invalidate(rt_table_t * rt)
 								rt2->flags);
 					} else {
 						rt_table_invalidate(rt2);
-						precursor_list_destroy(rt2);
+						precursor_list_destroy(rt2);//销毁rt2的先驱表
 					}
 				}
 			}
@@ -509,7 +510,7 @@ int NS_CLASS rt_table_invalidate(rt_table_t * rt)
 		timer_set_timeout(&rt->rt_timer, ACTIVE_ROUTE_TIMEOUT);
 
 		DEBUG(LOG_DEBUG, 0, "%s kept for repairs during %u msecs",
-		      ip_to_str(rt->dest_addr), ACTIVE_ROUTE_TIMEOUT);
+		      ip_to_str(rt->dest_addr), ACTIVE_ROUTE_TIMEOUT);//修复时间
 	} else {
 
 		/* Schedule a deletion timer */
@@ -517,22 +518,22 @@ int NS_CLASS rt_table_invalidate(rt_table_t * rt)
 		timer_set_timeout(&rt->rt_timer, DELETE_PERIOD);
 
 		DEBUG(LOG_DEBUG, 0, "%s removed in %u msecs",
-		      ip_to_str(rt->dest_addr), DELETE_PERIOD);
+		      ip_to_str(rt->dest_addr), DELETE_PERIOD);//移除时间
 	}
 
 	return 0;
 }
 
-void NS_CLASS rt_table_delete(rt_table_t * rt)
+void NS_CLASS rt_table_delete(rt_table_t * rt)//路由表项删除
 {
-	if (!rt) {
+	if (!rt) {//路由表内容为空
 		DEBUG(LOG_ERR, 0, "No route entry to delete");
 		return;
 	}
 
-	list_detach(&rt->l);
+	list_detach(&rt->l);将rt拿出来
 
-	precursor_list_destroy(rt);
+	precursor_list_destroy(rt);//删除rt的前驱表
 
 	if (rt->state == VALID) {
 
@@ -556,7 +557,7 @@ void NS_CLASS rt_table_delete(rt_table_t * rt)
 
 /* Add an neighbor to the active neighbor list. */
 
-void NS_CLASS precursor_add(rt_table_t * rt, struct in_addr addr)
+void NS_CLASS precursor_add(rt_table_t * rt, struct in_addr addr)//先驱表添加节点
 {
 	precursor_t *pr;
 	list_t *pos;
@@ -595,7 +596,7 @@ void NS_CLASS precursor_add(rt_table_t * rt, struct in_addr addr)
 
 /* Remove a neighbor from the active neighbor list. */
 
-void NS_CLASS precursor_remove(rt_table_t * rt, struct in_addr addr)
+void NS_CLASS precursor_remove(rt_table_t * rt, struct in_addr addr)//先驱表移除节点
 {
 	list_t *pos;
 
@@ -621,7 +622,7 @@ void NS_CLASS precursor_remove(rt_table_t * rt, struct in_addr addr)
 
 /* Delete all entries from the active neighbor list. */
 
-void precursor_list_destroy(rt_table_t * rt)//jajjajaj
+void precursor_list_destroy(rt_table_t * rt)//先驱链表销毁
 {
 	list_t *pos, *tmp;
 
@@ -633,6 +634,6 @@ void precursor_list_destroy(rt_table_t * rt)//jajjajaj
 		precursor_t *pr = (precursor_t *) pos;
 		list_detach(pos);
 		rt->nprec--;
-		free(pr);
+		free(pr);//释放表项
 	}
 }
