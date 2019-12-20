@@ -294,7 +294,7 @@ static void aodv_socket_read(int fd)
     int i, len, ttl = -1;
     AODV_msg *aodv_msg;
     struct dev_info *dev;
-    struct msghdr msgh;               //用于接收来自应用层的消息
+    struct msghdr msgh;               //存放为应用层的消息
     struct cmsghdr *cmsg;
     struct iovec iov;                  //一个缓冲区
     char ctrlbuf[CMSG_SPACE(sizeof(int)) +

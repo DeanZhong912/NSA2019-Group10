@@ -21,7 +21,7 @@
  *
  *****************************************************************************/
 
-#ifdef NS_PORT                                                                          //如果定义了NS_PORT 则执行ns-2/aodv.uu.h 否则执行下边的else
+#ifdef NS_PORT            //如果定义了NS_PORT 则执行ns-2/aodv.uu.h 否则执行下边的else
 #include "ns-2/aodv-uu.h"
 #else
 #include <netinet/in.h>
