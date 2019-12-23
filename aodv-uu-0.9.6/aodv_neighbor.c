@@ -37,7 +37,7 @@ extern int llfeedback;
 
 
 /* Add/Update neighbor from a non HELLO AODV control message... */
-void NS_CLASS neighbor_add(AODV_msg * aodv_msg, struct in_addr source,
+void NS_CLASS neighbor_add(AODV_msg * aodv_msg, struct in_addr source,//添加邻居节点
 			   unsigned int ifindex)
 {
     struct timeval now;
@@ -46,9 +46,9 @@ void NS_CLASS neighbor_add(AODV_msg * aodv_msg, struct in_addr source,
 
     gettimeofday(&now, NULL);
 
-    rt = rt_table_find(source);
+    rt = rt_table_find(source);//找到要添加的地址
 
-    if (!rt) {
+    if (!rt) {//若不为空
 	DEBUG(LOG_DEBUG, 0, "%s new NEIGHBOR!", ip_to_str(source));
 	rt = rt_table_insert(source, source, 1, 0,
 			     ACTIVE_ROUTE_TIMEOUT, VALID, 0, ifindex);
@@ -61,16 +61,16 @@ void NS_CLASS neighbor_add(AODV_msg * aodv_msg, struct in_addr source,
 	    seqno = rt->dest_seqno;
 
 	rt_table_update(rt, source, 1, seqno, ACTIVE_ROUTE_TIMEOUT,
-			VALID, rt->flags);
+			VALID, rt->flags);//更新路由表信息
     }
 
     if (!llfeedback && rt->hello_timer.used)
-	hello_update_timeout(rt, &now, ALLOWED_HELLO_LOSS * HELLO_INTERVAL);
+	hello_update_timeout(rt, &now, ALLOWED_HELLO_LOSS * HELLO_INTERVAL);//更新hello消息超时的定时器
 
     return;
 }
 
-void NS_CLASS neighbor_link_break(rt_table_t * rt)
+void NS_CLASS neighbor_link_break(rt_table_t * rt)//邻居节点断开的情况
 {
     /* If hopcount = 1, this is a direct neighbor and a link break has
        occured. Send a RERR with the incremented sequence number */
@@ -84,7 +84,7 @@ void NS_CLASS neighbor_link_break(rt_table_t * rt)
     if (!rt)
 	return;
 
-    if (rt->hcnt != 1) {
+    if (rt->hcnt != 1) {//距离不为1
 	DEBUG(LOG_DEBUG, 0, "%s is not a neighbor, hcnt=%d!!!",
 	      ip_to_str(rt->dest_addr), rt->hcnt);
 	return;
@@ -93,7 +93,7 @@ void NS_CLASS neighbor_link_break(rt_table_t * rt)
     DEBUG(LOG_DEBUG, 0, "Link %s down!", ip_to_str(rt->dest_addr));
 
     /* Invalidate the entry of the route that broke or timed out... */
-    rt_table_invalidate(rt);
+    rt_table_invalidate(rt);//将该条路由信息无效化
 
     /* Create a route error msg, unless the route is to be repaired */
     if (rt->nprec && !(rt->flags & RT_REPAIR)) {
@@ -107,7 +107,7 @@ void NS_CLASS neighbor_link_break(rt_table_t * rt)
 
     /* Purge precursor list: */
     if (!(rt->flags & RT_REPAIR))
-	precursor_list_destroy(rt);
+	precursor_list_destroy(rt);//清除先驱表信息
 
     /* Check the routing table for entries which have the unreachable
        destination (dest) as next hop. These entries (destinations)
@@ -120,13 +120,13 @@ void NS_CLASS neighbor_link_break(rt_table_t * rt)
 
 	    if (rt_u->state == VALID &&
 		rt_u->next_hop.s_addr == rt->dest_addr.s_addr &&
-		rt_u->dest_addr.s_addr != rt->dest_addr.s_addr) {
+		rt_u->dest_addr.s_addr != rt->dest_addr.s_addr) {//路由表中找到该断开节点的路由表项
 
 		/* If the link that broke are marked for repair,
 		   then do the same for all additional unreachable
 		   destinations. */
 
-		if ((rt->flags & RT_REPAIR) && rt_u->hcnt <= MAX_REPAIR_TTL) {
+		if ((rt->flags & RT_REPAIR) && rt_u->hcnt <= MAX_REPAIR_TTL) {//表明该路由表项正在修复
 
 		    rt_u->flags |= RT_REPAIR;
 		    DEBUG(LOG_DEBUG, 0, "Marking %s for REPAIR",
@@ -146,11 +146,11 @@ void NS_CLASS neighbor_link_break(rt_table_t * rt)
 
 			if (rt_u->nprec == 1)
 			    rerr_unicast_dest =
-				FIRST_PREC(rt_u->precursors)->neighbor;
+				FIRST_PREC(rt_u->precursors)->neighbor;//向该节点的邻居节点单播消息
 
 			DEBUG(LOG_DEBUG, 0,
 			      "Added %s as unreachable, seqno=%lu",
-			      ip_to_str(rt_u->dest_addr), rt_u->dest_seqno);
+			      ip_to_str(rt_u->dest_addr), rt_u->dest_seqno);//表明节点不可达
 		    } else {
 			/* Decide whether new precursors make this a non unicast
 			   RERR */
@@ -172,7 +172,7 @@ void NS_CLASS neighbor_link_break(rt_table_t * rt)
 			      ip_to_str(rt_u->dest_addr), rt_u->dest_seqno);
 		    }
 		}
-		precursor_list_destroy(rt_u);
+		precursor_list_destroy(rt_u);//销毁不可达节点的先驱表
 	    }
 	}
     }
