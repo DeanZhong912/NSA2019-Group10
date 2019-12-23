@@ -178,8 +178,8 @@ static unsigned int kaodv_hook(unsigned int hooknum,
 	else 
 		res = if_info_from_ifindex(&ifaddr, &bcaddr, out->ifindex);//不是则获取接口信息中的广播地址
 	
-	if (res < 0)//没读取成功
-		return NF_ACCEPT;
+	if (res < 0)//读取成功
+		return NF_ACCEPT;//正常处理
 	
 
 	/* Ignore broadcast and multicast packets */
@@ -222,7 +222,7 @@ static unsigned int kaodv_hook(unsigned int hooknum,
 
 			kaodv_queue_enqueue_packet(skb, okfn);//把skb进入队列中
 
-			return NF_STOLEN;//忘掉该数据包
+			return NF_STOLEN;//由Hook函数处理了该数据包，不要再继续传送
 		}
 		break;
 	case NF_INET_LOCAL_OUT://本地产生的数据包
@@ -235,9 +235,9 @@ static unsigned int kaodv_hook(unsigned int hooknum,
 							  0,
 							  iph->daddr);//控制netlink模块发送一遍路由请求
 			
-			kaodv_queue_enqueue_packet(skb, okfn);//将它加入队列
+			kaodv_queue_enqueue_packet(skb, okfn);//将它加入队列  
 			
-			return NF_STOLEN;//忘记，修复路由统一回复nf_stolen
+			return NF_STOLEN;//由Hook函数处理了该数据包，不要再继续传送
 
 		} else if (e.flags & KAODV_RT_GW_ENCAP) {
 #ifdef ENABLE_DISABLED
@@ -274,12 +274,12 @@ static unsigned int kaodv_hook(unsigned int hooknum,
 			 * dest entry is refreshed */
 			kaodv_update_route_timeouts(hooknum, out, iph);//更新路由信息
 			
-			skb = ip_pkt_encapsulate(skb, e.nhop);//数据包解封装
+			skb = ip_pkt_encapsulate(skb, e.nhop);//数据包封装
 			
 			if (!skb)
 				return NF_STOLEN;
 
-			ip_route_me_harder(skb, RTN_LOCAL);
+			ip_route_me_harder(skb, RTN_LOCAL);//重新进行路由操作
 		}
 		break;
 	case NF_INET_POST_ROUTING://应该是转发出去的

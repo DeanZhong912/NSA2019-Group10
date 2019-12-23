@@ -5,78 +5,61 @@
 #include <linux/inetdevice.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
-//sk_buff
+  //sk_buff 结构用来封装网络数据
+  //网络栈代码对数据的处理都是以sk_buff 结构为单元进行的
 struct sk_buff {
-	/* These two members must be first. */
-	struct sk_buff		*next;  //  因为sk_buff结构体是双链表，所以有前驱后继。这是个指向后面的sk_buff结构体指针
-	struct sk_buff		*prev;  //  这是指向前一个sk_buff结构体指针
-	//老版本（2.6以前）应该还有个字段： sk_buff_head *list  //即每个sk_buff结构都有个指针指向头节点
-	struct sock		    *sk;  // 指向拥有此缓冲的套接字sock结构体，即：宿主传输控制模块
-	ktime_t			tstamp;  // 时间戳，表示这个skb的接收到的时间，一般是在包从驱动中往二层发送的接口函数中设置
-	struct net_device	*dev;  // 表示一个网络设备，当skb为输出/输入时，dev表示要输出/输入到的设备
-	unsigned long	_skb_dst;  // 主要用于路由子系统，保存路由有关的东西
-	char			cb[48];  // 保存每层的控制信息,每一层的私有信息
-	unsigned int		len,  // 表示数据区的长度(tail - data)与分片结构体数据区的长度之和。其实这个len中数据区长度是个有效长度，
-                                      // 因为不删除协议头，所以只计算有效协议头和包内容。如：当在L3时，不会计算L2的协议头长度。
-				data_len;  // 只表示分片结构体数据区的长度，所以len = (tail - data) + data_len；
-	__u16			mac_len,  // mac报头的长度
-				hdr_len;  // 用于clone时，表示clone的skb的头长度
-	// 接下来是校验相关域，这里就不详细讲了。
-	__u32			priority;  // 优先级，主要用于QOS
-	kmemcheck_bitfield_begin(flags1);
-	__u8			local_df:1,  // 是否可以本地切片的标志
-				cloned:1,  // 为1表示该结构被克隆，或者自己是个克隆的结构体；同理被克隆时，自身skb和克隆skb的cloned都要置1
-				ip_summed:2, 
-				nohdr:1,  // nohdr标识payload是否被单独引用，不存在协议首部。                                                                                                       // 如果被引用，则决不能再修改协议首部，也不能通过skb->data来访问协议首部。</span></span>
-				nfctinfo:3;
-	__u8			pkt_type:3,  // 标记帧的类型
-				fclone:2,   // 这个成员字段是克隆时使用，表示克隆状态
-				ipvs_property:1,
-				peeked:1,
-				nf_trace:1;
-	__be16			protocol:16;  // 这是包的协议类型，标识是IP包还是ARP包或者其他数据包。
-	kmemcheck_bitfield_end(flags1);
-	void	(*destructor)(struct sk_buff *skb);  // 这是析构函数，后期在skb内存销毁时会用到
-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
-	struct nf_conntrack	*nfct;
-	struct sk_buff		*nfct_reasm;
+  struct sk_buff		* volatile next;
+  struct sk_buff		* volatile prev;//构成队列
+#if CONFIG_SKB_CHECK
+  int				magic_debug_cookie; //调试用
 #endif
-#ifdef CONFIG_BRIDGE_NETFILTER
-	struct nf_bridge_info	*nf_bridge;
-#endif
-	int			iif;  // 接受设备的index
-#ifdef CONFIG_NET_SCHED
-	__u16			tc_index;	/* traffic control index */
-#ifdef CONFIG_NET_CLS_ACT
-	__u16			tc_verd;	/* traffic control verdict */
-#endif
-#endif
-	kmemcheck_bitfield_begin(flags2);
-	__u16			queue_mapping:16;
-#ifdef CONFIG_IPV6_NDISC_NODETYPE
-	__u8			ndisc_nodetype:2;
-#endif
-	kmemcheck_bitfield_end(flags2);
-	/* 0/14 bit hole */
-#ifdef CONFIG_NET_DMA
-	dma_cookie_t		dma_cookie;
-#endif
-#ifdef CONFIG_NETWORK_SECMARK
-	__u32			secmark;
-#endif
-	__u32			mark;
-	__u16			vlan_tci;
-	sk_buff_data_t		transport_header;      // 指向四层帧头结构体指针
-	sk_buff_data_t		network_header;	       // 指向三层IP头结构体指针
-	sk_buff_data_t		mac_header;	       // 指向二层mac头的头
-	/* These elements must be at the end, see alloc_skb() for details.  */
-	sk_buff_data_t		tail;			  // 指向数据区中实际数据结束的位置
-	sk_buff_data_t		end;			  // 指向数据区中结束的位置（非实际数据区域结束位置）
-	unsigned char		*head,			  // 指向数据区中开始的位置（非实际数据区域开始位置）
-				*data;			  // 指向数据区中实际数据开始的位置			
-	unsigned int		truesize;		  // 表示总长度，包括sk_buff自身长度和数据区以及分片结构体的数据区长度
-	atomic_t		users;                    // skb被克隆引用的次数，在内存申请和克隆时会用到
-};   //end sk_buff
+  struct sk_buff		* volatile link3; //构成数据包重发队列
+  struct sock			*sk; //数据包所属的套接字
+  volatile unsigned long	when;	 //数据包的发送时间，用于计算往返时间RTT/* used to compute rtt's	*/
+  struct timeval		stamp; //记录时间
+  struct device			*dev; //接收该数据包的接口设备
+  struct sk_buff		*mem_addr; //该sk_buff在内存中的基地址，用于释放该sk_buff结构
+  //联合类型，表示数据报在不同处理层次上所到达的处理位置
+  union {
+	struct tcphdr	*th; //传输层tcp，指向首部第一个字节位置
+	struct ethhdr	*eth; //链路层上，指向以太网首部第一个字节位置
+	struct iphdr	*iph; //网络层上，指向ip首部第一个字节位置
+	struct udphdr	*uh; //传输层udp协议，
+	unsigned char	*raw; //随层次变化而变化，链路层=eth，网络层=iph
+	unsigned long	seq; //针对tcp协议的待发送数据包而言，表示该数据包的ACK值
+  } h;
+  struct iphdr		*ip_hdr; //指向ip首部的指针		/* For IPPROTO_RAW */
+  unsigned long			mem_len; //表示sk_buff结构大小加上数据部分的总长度
+  unsigned long 		len; //只表示数据部分长度，len = mem_len - sizeof(sk_buff)
+  unsigned long			fraglen; //分片数据包个数
+  struct sk_buff		*fraglist;	/* Fragment list */
+  unsigned long			truesize; //同men_len
+  unsigned long 		saddr; //源端ip地址
+  unsigned long 		daddr; //目的端ip地址
+  unsigned long			raddr; //数据包下一站ip地址		/* next hop addr */
+   //标识字段
+  volatile char 		acked, //=1，表示数据报已得到确认，可以从重发队列中删除
+				used, //=1，表示该数据包的数据已被应用程序读完，可以进行释放
+				free, //用于数据包发送，=1表示再进行发送操作后立即释放，无需缓存
+				arp; //用于待发送数据包，=1表示已完成MAC首部的建立，=0表示还不知道目的端MAC地址
+  //已进行tries试发送，该数据包正在被其余部分使用，路由类型，数据包类型
+  unsigned char			tries,lock,localroute,pkt_type;
+   //下面是数据包的类型，即pkt_type的取值
+#define PACKET_HOST		0	  //发往本机	/* To us */
+#define PACKET_BROADCAST	1 //广播
+#define PACKET_MULTICAST	2 //多播
+#define PACKET_OTHERHOST	3 //其他机器		/* Unmatched promiscuous */
+  unsigned short		users; //使用该数据包的模块数		/* User count - see datagram.c (and soon seqpacket.c/stream.c) */
+  unsigned short		pkt_class;	/* For drivers that need to cache the packet type with the skbuff (new PPP) */
+#ifdef CONFIG_SLAVE_BALANCING
+  unsigned short		in_dev_queue; //该字段是否正在缓存于设备缓存队列中
+#endif  
+  unsigned long			padding[0]; //填充字节
+  unsigned char			data[0]; //指向该层数据部分
+  //data指向的数据负载首地址，在各个层对应不同的数据部分
+//从侧面看出sk_buff结构基本上是贯穿整个网络栈的非常重要的一个数据结构
+};
+
 
 /* Interface information */
 struct if_info {
