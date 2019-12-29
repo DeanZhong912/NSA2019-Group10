@@ -62,7 +62,7 @@ char *progname;              //程序名，主要是文件名？
 int wait_on_reboot = 1;      //是否禁用15秒等待重新启动延迟
 int qual_threshold = 0;      //为控制包设置最小信号质量阈值
 int llfeedback = 0;          //是否启用链路层反馈
-int gw_prefix = 1;           //
+int gw_prefix = 1;           //启用实验性的Internet网关支持
 struct timer worb_timer;	 //等待重启计时器/* Wait on reboot timer */
 
 /* Dynamic configuration values */

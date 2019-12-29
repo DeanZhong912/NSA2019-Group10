@@ -46,14 +46,14 @@
 #ifndef NS_PORT
 extern int log_to_file, rt_log_interval;
 extern char *progname;
-int log_file_fd = -1;
-int log_rt_fd = -1;
+int log_file_fd = -1;//日志文件描述符
+int log_rt_fd = -1;//日志表描述符
 int log_nmsgs = 0;
 int debug = 0;
 struct timer rt_log_timer;
 #endif
 
-void NS_CLASS log_init()
+void NS_CLASS log_init()//日志初始化
 {
 
 /* NS_PORT: Log filename is prefix + IP address + suffix */
@@ -68,12 +68,12 @@ void NS_CLASS log_init()
     sprintf(AODV_LOG_PATH, "%s%d%s", AODV_LOG_PATH_PREFIX, node_id,
 	    AODV_LOG_PATH_SUFFIX);
     sprintf(AODV_RT_LOG_PATH, "%s%d%s", AODV_LOG_PATH_PREFIX, node_id,
-	    AODV_RT_LOG_PATH_SUFFIX);
+	    AODV_RT_LOG_PATH_SUFFIX);/*日志文件格式为前缀+IP地址+后缀*/
 
 #endif				/* NS_PORT */
 
     if (log_to_file) {
-	if ((log_file_fd =
+	if ((log_file_fd =//返回日志文件描述符
 	     open(AODV_LOG_PATH, O_RDWR | O_CREAT | O_TRUNC,
 		  S_IROTH | S_IWUSR | S_IRUSR | S_IRGRP)) < 0) {
 	    perror("open log file failed!");
@@ -91,13 +91,13 @@ void NS_CLASS log_init()
     openlog(progname, 0, LOG_DAEMON);
 }
 
-void NS_CLASS log_rt_table_init()
+void NS_CLASS log_rt_table_init()//初始化路由表的日志信息
 {
-    timer_init(&rt_log_timer, &NS_CLASS print_rt_table, NULL);
-    timer_set_timeout(&rt_log_timer, rt_log_interval);
+    timer_init(&rt_log_timer, &NS_CLASS print_rt_table, NULL);//定时器初始化
+    timer_set_timeout(&rt_log_timer, rt_log_interval);//将rt_log_interval加入到定时器的timeout中
 }
 
-void NS_CLASS log_cleanup()
+void NS_CLASS log_cleanup()//清除日志信息
 {
     if (log_to_file && log_file_fd) {
 	if (NS_OUTSIDE_CLASS close(log_file_fd) < 0)
@@ -105,7 +105,7 @@ void NS_CLASS log_cleanup()
     }
 }
 
-void NS_CLASS write_to_log_file(char *msg, int len)
+void NS_CLASS write_to_log_file(char *msg, int len)//写入日志文件
 {
     if (!log_file_fd) {
 	fprintf(stderr, "Could not write to log file\n");
@@ -116,11 +116,10 @@ void NS_CLASS write_to_log_file(char *msg, int len)
 	return;
     }
     if (write(log_file_fd, msg, len) < 0)
-	perror("Could not write to log file");
+	perror("Could not write to log file");/*条件判断*/
 }
 
-char *packet_type(u_int type)
-{
+char *packet_type(u_int type)//数据包的类型
     static char temp[50];
 
     switch (type) {
@@ -139,12 +138,26 @@ char *packet_type(u_int type)
 void NS_CLASS alog(int type, int errnum, const char *function, char *format,
 		   ...)// 检查数据帧的格式
 {
-    va_list ap;
+    va_list ap;//VA_LIST 是在C语言中解决变参问题的一组宏，所在头文件：#include <stdarg.h>，用于获取不确定个数的参数。
     static char buffer[256] = "";
     static char log_buf[1024];
     char *msg;
     struct timeval now;
-    struct tm *time;
+    struct tm *time;/*struct tm 
+					{ 　
+						int tm_sec;		  秒–取值区间为[0,59] 　　
+						int tm_min; 		 分 - 取值区间为[0,59]  　　
+						int tm_hour; 	          时 - 取值区间为[0,23] 　　
+						int tm_mday;		  一个月中的日期 - 取值区间为[1,31] 　
+						int tm_mon;		  月份（从一月开始，0代表一月） - 取值区间为[0,11] 
+						int tm_year; 	          年份，其值从1900开始  　
+						int tm_wday; 	          星期–取值区间为[0,6]，其中0代表星期天，1代表星期一，以此类推 　
+						int tm_yday; 	          从每年的1月1日开始的天数–取值区间为[0,365]，其中0代表1月1日，1代表1月2日，以此类推 　
+						int tm_isdst; 	          夏令时标识符，实行夏令时的时候，tm_isdst为正。不实行夏令时的进候，tm_isdst为0；不了解情况时，tm_isdst()为负。 　
+						long int tm_gmtoff;	 指定了日期变更线东面时区中UTC东部时区正秒数或UTC西部时区的负秒数　　
+						const char *tm_zone;     当前时区的名字(与环境变量TZ有关)　
+					}; */
+
     int len = 0;
 
 /* NS_PORT: Include IP address in log */
@@ -155,16 +168,15 @@ void NS_CLASS alog(int type, int errnum, const char *function, char *format,
     }
 #endif				/* NS_PORT */
 
-    va_start(ap, format);
+    va_start(ap, format);//va_start，函数名称，读取可变参数的过程其实就是在堆栈中，使用指针,遍历堆栈段中的参数列表,从低地址到高地址一个一个地把参数内容读出来的过程·
 
     if (type == LOG_WARNING)
 	msg = &buffer[9];
     else
 	msg = buffer;
 
-    vsprintf(msg, format, ap);
-    va_end(ap);
-
+    vsprintf(msg, format, ap);//vsprintf() 中的 arg 参数位于数组中。数组的元素会被插入主字符串的百分比 (%) 符号处。该函数是逐步执行的。在第一个 % 符号中，插入 arg1，在第二个 % 符号处，插入 arg2，依此类推。
+    va_end(ap);//结束调用
     if (!debug && !log_to_file)
 	goto syslog;
 
@@ -186,7 +198,7 @@ void NS_CLASS alog(int type, int errnum, const char *function, char *format,
     if (errnum == 0)
 	len += sprintf(log_buf + len, "\n");
     else
-	len += sprintf(log_buf + len, ": %s\n", strerror(errnum));
+	len += sprintf(log_buf + len, ": %s\n", strerror(errnum));//通过标准错误的标号，获得错误的描述字符串 ，将单纯的错误标号转为字符串描述，方便用户查找错误。
 
     if (len > 1024) {
 	fprintf(stderr, "alog(): buffer to small! len = %d\n", len);
@@ -216,7 +228,7 @@ void NS_CLASS alog(int type, int errnum, const char *function, char *format,
 }
 
 
-char *NS_CLASS rreq_flags_to_str(RREQ * rreq)
+char *NS_CLASS rreq_flags_to_str(RREQ * rreq)//rreq消息转化为字符型
 {
     static char buf[5];
     int len = 0;
@@ -237,7 +249,7 @@ char *NS_CLASS rreq_flags_to_str(RREQ * rreq)
     return str;
 }
 
-char *NS_CLASS rrep_flags_to_str(RREP * rrep)
+char *NS_CLASS rrep_flags_to_str(RREP * rrep)//rrep消息转化为字符型
 {
     static char buf[3];
     int len = 0;
@@ -254,7 +266,7 @@ char *NS_CLASS rrep_flags_to_str(RREP * rrep)
     return str;
 }
 
-void NS_CLASS log_pkt_fields(AODV_msg * msg)
+void NS_CLASS log_pkt_fields(AODV_msg * msg)//根据消息类型确定要写入的日志信息
 {
 
     RREQ *rreq;
@@ -294,7 +306,7 @@ void NS_CLASS log_pkt_fields(AODV_msg * msg)
     }
 }
 
-char *NS_CLASS rt_flags_to_str(u_int16_t flags)
+char *NS_CLASS rt_flags_to_str(u_int16_t flags)//路由标志转化为字符串
 {
     static char buf[5];
     int len = 0;
@@ -314,7 +326,7 @@ char *NS_CLASS rt_flags_to_str(u_int16_t flags)
     return str;
 }
 
-char *NS_CLASS state_to_str(u_int8_t state)
+char *NS_CLASS state_to_str(u_int8_t state)//状态标志转化为字符串
 {
     if (state == VALID)
 	return "VAL";
@@ -324,7 +336,7 @@ char *NS_CLASS state_to_str(u_int8_t state)
 	return "?";
 }
 
-char *NS_CLASS devs_ip_to_str()
+char *NS_CLASS devs_ip_to_str()//设备IP地址转化为字符串
 {
     static char buf[MAX_NR_INTERFACES * IFNAMSIZ];
     char *str;
@@ -339,7 +351,7 @@ char *NS_CLASS devs_ip_to_str()
     return str;
 }
 
-void NS_CLASS print_rt_table(void *arg)
+void NS_CLASS print_rt_table(void *arg)//打印路由表
 {
     char rt_buf[2048], ifname[64], seqno_str[11];
     int len = 0;
@@ -413,7 +425,7 @@ void NS_CLASS print_rt_table(void *arg)
 
 		/* Print all precursors for the current routing entry */
 		list_foreach(pos2, &rt->precursors) {
-		    precursor_t *pr = (precursor_t *) pos2;
+		    precursor_t *pr = (precursor_t *) pos2;//遍历打印先驱表
 
 		    /* Skip first entry since it is already printed */
 		    if (pos2->prev == &rt->precursors)

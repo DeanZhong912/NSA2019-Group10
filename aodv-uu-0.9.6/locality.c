@@ -33,22 +33,27 @@ extern int gw_prefix;
 #endif
 
 
-int NS_CLASS locality(struct in_addr dest, unsigned int ifindex)
+int NS_CLASS locality(struct in_addr dest, unsigned int ifindex)//获取给定地址的主机的信息
 {
 
 #ifndef NS_PORT
     if (gw_prefix) {
 	if ((dest.s_addr & DEV_IFINDEX(ifindex).netmask.s_addr) ==
-	    (DEV_IFINDEX(ifindex).ipaddr.s_addr & DEV_IFINDEX(ifindex).netmask.
+	    (DEV_IFINDEX(ifindex).ipaddr.s_addr & DEV_IFINDEX(ifindex).netmask.//判断目的地址是否为网关
 	     s_addr))
 	    return HOST_ADHOC;
 	else
 	    return HOST_INET;
 
     } else {
-	struct hostent *hent;
+	struct hostent *hent;//hostent是host entry的缩写，该结构记录主机的信息，包括主机名、别名、地址类型、地址长度和地址列表。之所以主机的地址是一个列表的形式，原因是当一个主机有多个网络接口时，自然有多个地址。
 
-	hent = gethostbyaddr(&dest, sizeof(struct in_addr), AF_INET);
+	hent = gethostbyaddr(&dest, sizeof(struct in_addr), AF_INET);/*返回对应于给定地址的主机信息。
+																	#include <sys/socket.h>
+																	struct hostent *gethostbyaddr(const char * addr, int len, int type);
+																	addr：指向网络字节顺序地址的指针。
+																	len： 地址的长度，在AF_INET类型地址中为4。
+																	type：地址类型，应为AF_INET。*/
 
 	if (!hent) {
 	    switch (h_errno) {

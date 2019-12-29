@@ -144,7 +144,7 @@ void kaodv_netlink_send_rt_update_msg(int type, __u32 src, __u32 dest,
 		return;
 	}
 	/* netlink_unicast(kaodvnl, skb, peer_pid, MSG_DONTWAIT); */
-	netlink_broadcast(kaodvnl, skb, 0, AODVGRP_NOTIFY, GFP_USER);//广播发送
+	netlink_broadcast(kaodvnl, skb, 0, AODVGRP_NOTIFY, GFP_USER);//广播发送 内核->用户
 }
 
 void kaodv_netlink_send_rerr_msg(int type, __u32 src, __u32 dest, int ifindex)
@@ -171,7 +171,7 @@ void kaodv_netlink_send_rerr_msg(int type, __u32 src, __u32 dest, int ifindex)
 }
 
 static int kaodv_netlink_receive_peer(unsigned char type, void *msg,
-				      unsigned int len)
+				      unsigned int len)//用于kaodvnl套接字的创建
 {
 	int ret = 0;
 	struct kaodv_rt_msg *m;

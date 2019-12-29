@@ -30,9 +30,9 @@
 
 #ifndef NS_NO_DECLARATIONS
 
-void neighbor_add(AODV_msg * aodv_msg, struct in_addr source,
+void neighbor_add(AODV_msg * aodv_msg, struct in_addr source,//添加邻居节点
 		  unsigned int ifindex);
-void neighbor_link_break(rt_table_t * rt);
+void neighbor_link_break(rt_table_t * rt);//邻居节点连接断开
 
 #endif				/* NS_NO_DECLARATIONS */
 
