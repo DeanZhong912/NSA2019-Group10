@@ -133,7 +133,7 @@ void NS_CLASS rerr_process(RERR * rerr, int rerrlen, struct in_addr ip_src,
 	    /* (d) check precursor list for emptiness. If not empty, include
 	       the destination as an unreachable destination in the
 	       RERR... */
-	    if (rt->nprec && !(rt->flags & RT_REPAIR)) {					//路由表中有先驱表且为待修复
+	    if (rt->nprec && !(rt->flags & RT_REPAIR)) {					//路由表中有先驱表且不为待修复
 
 		if (!new_rerr) {												//new_rerr为空
 		    u_int8_t flags = 0;

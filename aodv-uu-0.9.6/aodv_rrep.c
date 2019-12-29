@@ -355,13 +355,13 @@ void NS_CLASS rrep_process(RREP * rrep, int rreplen, struct in_addr ip_src,		//r
 #ifdef CONFIG_GATEWAY
 	if (inet_rrep) {												//如果rrep来自网关
 	    rt_table_t *inet_rt;										
-	    inet_rt = rt_table_find(inet_dest_addr);					//寻找目的地址为inet_dest_addr网关的路由表项
+	    inet_rt = rt_table_find(inet_dest_addr);					//寻找该网关下的目的地址为inet_dest_addr的路由表项
 
 	    /* Add a "fake" route indicating that this is an Internet
 	     * destination, thus should be encapsulated and routed through a
 	     * gateway... */
 	    if (!inet_rt)												//如果没找到
-		rt_table_insert(inet_dest_addr, rrep_dest, rrep_new_hcnt, 0,	//则新建一个目的地址是该网关 下一跳是rrep_dest的路由表项
+		rt_table_insert(inet_dest_addr, rrep_dest, rrep_new_hcnt, 0,	//则新建一个目的地址是该IP地址 下一跳是rrep_dest的路由表项
 				rrep_lifetime, VALID, RT_INET_DEST, ifindex);
 	    else if (inet_rt->state == INVALID || rrep_new_hcnt < inet_rt->hcnt) {	//如果是一个无效的或者跳数比原来的小
 		rt_table_update(inet_rt, rrep_dest, rrep_new_hcnt, 0,					//则进行更新
@@ -395,7 +395,7 @@ void NS_CLASS rrep_process(RREP * rrep, int rreplen, struct in_addr ip_src,		//r
 		    aodv_socket_send((AODV_msg *) rerr, dest,			//广播一个rerr消息
 				     RERR_CALC_SIZE(rerr), 1,
 				     &DEV_IFINDEX(fwd_rt->ifindex));
-	    }
+	    } 
 	}
     } else {
 	/* --- Here we FORWARD the RREP on the REVERSE route --- */
